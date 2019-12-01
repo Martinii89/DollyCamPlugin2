@@ -167,11 +167,17 @@ void DollyCamPlugin::OnCamCommand(vector<string> params)
 		return;
 	}
 
-	if (!IsApplicable())
+	if (dollyCam->IsActive())
 	{
-		cvarManager->log("You cannot use that command here. Make sure you're in flycam");
+		cvarManager->log("You cannot use that command while dollycam is active");
 		return;
 	}
+
+	//if (!IsApplicable())
+	//{
+	//	cvarManager->log("You cannot use that command here. Make sure you're in flycam");
+	//	return;
+	//}
 
 	if (command.compare("dolly_cam_set_location") == 0)
 	{
@@ -252,11 +258,11 @@ void DollyCamPlugin::OnInReplayCommand(vector<string> params)
 
 void DollyCamPlugin::OnReplayCommand(vector<string> params)
 {
-	if (!IsApplicable())
-	{
-		cvarManager->log("You cannot use that command here. Make sure you're in flycam");
-		return;
-	}
+	//if (!IsApplicable())
+	//{
+	//	cvarManager->log("You cannot use that command here. Make sure you're in flycam");
+	//	return;
+	//}
 		
 	string command = params.at(0);
 	if (command.compare("dolly_snapshot_take") == 0)
@@ -284,11 +290,11 @@ void DollyCamPlugin::OnReplayCommand(vector<string> params)
 
 void DollyCamPlugin::OnSnapshotCommand(vector<string> params)
 {
-	if (!IsApplicable())
-	{
-		cvarManager->log("You cannot do that here!");
-		return;
-	}
+	//if (!IsApplicable())
+	//{
+	//	cvarManager->log("You cannot do that here!");
+	//	return;
+	//}
 
 	string command = params.at(0);
 	if (command.compare("dolly_snapshot_list") == 0)
@@ -432,7 +438,7 @@ void DollyCamPlugin::OnLiveCommand(vector<string> params)
 
 void DollyCamPlugin::onRender(CanvasWrapper canvas)
 {
-	if (!IsApplicable() || !*renderCameraPath)
+	if (/*!IsApplicable() ||*/ !*renderCameraPath)
 		return;
 	dollyCam->Render(canvas);
 }
