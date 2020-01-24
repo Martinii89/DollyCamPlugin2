@@ -1,6 +1,7 @@
 #include "dollycamplugin.h"
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
+#include "imgui/imgui_timeline.h"
 #include "serialization.h"
 #include "bakkesmod\..\\utils\parser.h"
 #include <functional>
@@ -54,7 +55,7 @@ namespace Columns
 	{
 		static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
 		const char* widgetFormat = "%.1f";
-		ImGui::PushItemWidth(50);
+		ImGui::PushItemWidth(60);
 		ImGui::SameLine();
 		if (ImGui::DragFloat(("##x" + to_string(i)).c_str(), &snap.location.X, 1.f, 0.f, 0.f, widgetFormat))
 		{
@@ -89,7 +90,7 @@ namespace Columns
 	{
 		static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
 		const char* widgetFormat = "%.1f";
-		ImGui::PushItemWidth(50);
+		ImGui::PushItemWidth(60);
 		ImGui::SameLine();
 		if (ImGui::DragFloat(("##Pitch" + to_string(i)).c_str(), &snap.rotation.Pitch._value, 1.f, snap.rotation.Pitch._min, snap.rotation.Pitch._max, widgetFormat))
 		{
@@ -208,6 +209,47 @@ void DollyCamPlugin::Render()
 	static bool lockCam = false;
 	ImGui::Checkbox("Lock camera", &lockCam);
 	dollyCam->lockCamera = ImGui::IsMouseDragging() || lockCam;
+
+	static int CinderSpinnervalue = 50;
+	ImGui::DragInt("CinderSpinner", &CinderSpinnervalue, 1.0f, 0, 100);
+
+	auto replayServer = gameWrapper->GetGameEventAsReplay();
+	if (!replayServer.IsNull())
+	{
+		auto replay = replayServer.GetReplay();
+		auto totalReplayTime = replay.GetNumFrames();
+		ImGui::BeginTimeline("Timeline", totalReplayTime);
+
+		static float currentFrame = 0;
+		static float seekFrame = 0.0f;
+
+		auto frames = dollyCam->GetUsedFrames();
+		if (frames.size() > 0)
+		{
+			auto firstFrame = (float)frames[0];
+			if (ImGui::TimelineMarker("FirstFrame", firstFrame));
+		}
+
+		if (ImGui::TimelineMarker("test2", currentFrame))
+		{
+			//cvarManager->log("Seek to:" + to_string(currentFrame));
+			seekFrame = currentFrame;
+		}
+		else {
+			currentFrame = replay.GetCurrentFrame();
+		}
+		if (Columns::IsItemJustMadeInactive())
+		{
+			int _frame = seekFrame; //lambda can't capture static
+			gameWrapper->Execute([_frame, this](GameWrapper* gw) {
+				gw->GetGameEventAsReplay().SkipToFrame(_frame);
+				cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
+				});
+			cvarManager->log("Seek to:" + to_string(seekFrame));
+			//frameSkip = seekFrame;
+		}
+		ImGui::EndTimeline();
+	}
 
 	ImGui::EndChild();
 	ImGui::End();

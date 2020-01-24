@@ -136,7 +136,6 @@ void DollyCamPlugin::onTick(std::string funcName)
 {
 	if (!IsApplicable() || !dollyCam->IsActive())
 		return;
-
 	dollyCam->Apply();
 }
 

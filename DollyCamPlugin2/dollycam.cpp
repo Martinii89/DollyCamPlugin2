@@ -152,9 +152,8 @@ void DollyCam::Apply()
 	{
 		if (isFirst) {
 			diff = sw.GetSecondsElapsed();
-			cvarManager->log("resetting animation position");
+			//TODO make this optional. it migh give some scary messages if you try to join a ranked game afterwards.
 			ResetAnimations();
-			gameWrapper->ExecuteUnrealCommand("getall SeqAct_Interp Position");
 
 			isFirst = false;
 		}
@@ -330,9 +329,10 @@ void DollyCam::Render(CanvasWrapper cw)
 				cw.DrawLine(prevLine.minus({ 1,1 }), line.minus({ 1,1 })); //make lines thicker
 				cw.DrawLine(prevLine.minus({ -1,-1 }), line.minus({ -1,-1 }));
 				if (renderFrames) {
-					cw.SetColor(0, 0, 0, 255);
+					cw.SetColor(255, 255, 255, 255);
 					cw.SetPosition(line);
-					cw.DrawString(to_string(it->first));
+					cw.DrawBox(Vector2{ 2, 2 });
+					//cw.DrawString(to_string(it->first));
 				}
 			}
 		}
