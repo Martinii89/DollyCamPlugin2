@@ -7,7 +7,6 @@
 #include "interpstrategies\supportedstrategies.h"
 #include "serialization.h"
 
-
 void DollyCam::UpdateRenderPath()
 {
 	if (!gameWrapper->IsInReplay())
@@ -39,8 +38,6 @@ void DollyCam::UpdateRenderPath()
 			//	timePerFrame = replayTickRate;
 		}
 
-
-
 		CameraSnapshot snapshot;
 		snapshot.frame = i;
 		snapshot.timeStamp = beginTime + (timePerFrame * (i - lastSyncedFrame));
@@ -51,13 +48,17 @@ void DollyCam::UpdateRenderPath()
 
 		if (snapshot.FOV > 1)
 			currentRenderPath->insert(make_pair(i, snapshot));
-
 	}
 }
 
 void DollyCam::CheckIfSameInterp()
 {
 	usesSameInterp = cvarManager->getCvar("dolly_interpmode_location").getIntValue() == cvarManager->getCvar("dolly_interpmode_rotation").getIntValue();
+}
+
+void DollyCam::ResetAnimations()
+{
+	gameWrapper->ExecuteUnrealCommand("SET SeqAct_Interp Position 0.0");
 }
 
 DollyCam::DollyCam(std::shared_ptr<GameWrapper> _gameWrapper, std::shared_ptr<CVarManagerWrapper> _cvarManager, std::shared_ptr<IGameApplier> _gameApplier)
@@ -83,7 +84,6 @@ CameraSnapshot DollyCam::TakeSnapshot(bool saveToPath)
 	CameraWrapper flyCam = gameWrapper->GetCamera();
 	if (sw.IsNull())
 		return save;
-
 
 	save.timeStamp = sw.GetReplayTimeElapsed();
 	//save.timeStamp = sw.GetCurrentReplayFrame()/replay.GetRecordFPS();
@@ -152,6 +152,9 @@ void DollyCam::Apply()
 	{
 		if (isFirst) {
 			diff = sw.GetSecondsElapsed();
+			cvarManager->log("resetting animation position");
+			ResetAnimations();
+			gameWrapper->ExecuteUnrealCommand("getall SeqAct_Interp Position");
 
 			isFirst = false;
 		}
@@ -242,8 +245,20 @@ bool DollyCam::ChangeFrame(const int oldFrame, const int newFrame)
 		return true;
 	}
 	return false;
+}
 
-
+void DollyCam::UpdateFrame(CameraSnapshot snapshot)
+{
+	int frame = snapshot.frame;
+	auto old = GetSnapshot(frame);
+	if (old.frame == frame)
+	{
+		InsertSnapshot(snapshot);
+		//cvarManager->log("updated frame");
+	}
+	else {
+		cvarManager->log("Invalid snapshot update.");
+	}
 }
 
 vector<int> DollyCam::GetUsedFrames()
@@ -378,11 +393,8 @@ string DollyCam::GetInterpolationMethod(bool locationInterp)
 	return "none";
 }
 
-
-
 shared_ptr<InterpStrategy> DollyCam::CreateInterpStrategy(int interpStrategy)
 {
-
 	int chaikinDegree = cvarManager->getCvar("dolly_chaikin_degree").getIntValue();
 	switch (interpStrategy)
 	{

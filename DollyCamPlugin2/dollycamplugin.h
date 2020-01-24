@@ -12,6 +12,8 @@ private:
 	CameraSnapshot selectedSnapshot;
 	bool IsApplicable();
 
+	void CameraLock(ServerWrapper camInput, void* params, string funcName);
+
 	//gui stuff
 	bool isWindowOpen = true;
 	bool isMinimized = false;

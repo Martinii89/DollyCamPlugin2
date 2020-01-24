@@ -110,14 +110,15 @@
       <AdditionalIncludeDirectories>$(BAKKESMOD)\bakkesmodsdk\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(BAKKESMOD)\bakkesmodsdk\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>libs;$(BAKKESMOD)\bakkesmodsdk\lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>python "$(BAKKESMOD)\bakkesmodsdk\bakkes_patchplugin.py" "$(TargetPath)"</Command>
+      <Command>C:\Users\m4rti\Miniconda3\python.exe "$(BAKKESMOD)\bakkesmodsdk\bakkes_patchplugin.py" "$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

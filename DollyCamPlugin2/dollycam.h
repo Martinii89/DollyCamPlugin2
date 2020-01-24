@@ -8,12 +8,13 @@
 #include "interpstrategies/interpstrategy.h"
 #include "bakkesmod\wrappers\includes.h"
 
+
+
 class DollyCam
 {
 private:
 	std::shared_ptr<savetype> currentPath;
-	std::shared_ptr<GameWrapper> gameWrapper;
-	std::shared_ptr<CVarManagerWrapper> cvarManager;
+
 	std::shared_ptr<IGameApplier> gameApplier;
 	std::shared_ptr<InterpStrategy> locationInterpStrategy;
 	std::shared_ptr<InterpStrategy> rotationInterpStrategy;
@@ -25,11 +26,15 @@ private:
 	bool renderFrames = false;
 	void UpdateRenderPath();
 	void CheckIfSameInterp();
+	void ResetAnimations();
+
 
 public:
 	DollyCam(std::shared_ptr<GameWrapper> _gameWrapper, std::shared_ptr<CVarManagerWrapper> _cvarManager, std::shared_ptr<IGameApplier> _gameApplier);
 	~DollyCam();
 
+	std::shared_ptr<GameWrapper> gameWrapper;
+	std::shared_ptr<CVarManagerWrapper> cvarManager;
 	//Takes a snapshot of the current camera state and adds it to current path, returns true if taking snapshot was successfull
 	CameraSnapshot TakeSnapshot(bool saveToPath);
 	bool IsActive();
@@ -42,6 +47,7 @@ public:
 	CameraSnapshot GetSnapshot(int frame);
 	void DeleteFrameByIndex(int frame);
 	bool ChangeFrame(int oldFrame, int newFrame);
+	void UpdateFrame(CameraSnapshot snapshot);
 	vector<int> GetUsedFrames();
 	void SetRenderPath(bool render);
 	void SetRenderFrames(bool renderFrames);
@@ -54,5 +60,10 @@ public:
 	void LoadFromFile(string filename);
 	std::shared_ptr<savetype> GetCurrentPath();
 	void SetCurrentPath(std::shared_ptr<savetype> newPath);
+
+
+	bool lockCamera = false;
+	bool gotLockPov = false;
+	POV lockPOV;
 };
 
