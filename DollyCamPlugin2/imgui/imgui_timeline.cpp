@@ -5,12 +5,10 @@
 // https://github.com/ocornut/imgui/issues/76
 
 namespace ImGui {
-
 	static float s_max_timeline_value;
 	static float s_min_timeline_value = 0;
 	static const float TIMELINE_RADIUS = 6;
 	static const float TIMELINE_PADDING = 5;
-
 
 	bool BeginTimeline(const char* str_id, float max_time, float min_time)
 	{
@@ -29,18 +27,21 @@ namespace ImGui {
 		ImGuiWindow* win = GetCurrentWindow();
 		return ImVec2(
 			GetWindowContentRegionMin().x + win->Pos.x + TIMELINE_PADDING,
-			GetWindowContentRegionMax().y - GetTextLineHeightWithSpacing() + win->Pos.y + win->Scroll.y);
+			//GetWindowContentRegionMin().y - GetTextLineHeightWithSpacing() + win->Pos.y + win->Scroll.y);
+			GetWindowContentRegionMin().y + win->Pos.y + win->Scroll.y + TIMELINE_PADDING);
 	}
 
 	ImVec2 GetTimelineEnd()
 	{
-		ImGuiWindow* win = GetCurrentWindow();
-		return GetWindowContentRegionMax() + win->Pos + ImVec2(0, win->Scroll.y) - ImVec2(TIMELINE_PADDING, 0);
+		//ImGuiWindow* win = GetCurrentWindow();
+		auto start = GetTimelineStart();
+		start.y += GetTextLineHeightWithSpacing();
+		start.x += GetTimelineWidth();
+		return start;
+		//return GetWindowContentRegionMax() + win->Pos + ImVec2(0, win->Scroll.y) - ImVec2(TIMELINE_PADDING, 0);
 	}
 
-
-
-	bool TimelineMarker(const char* str_id, float& time)
+	bool TimelineMarker(const char* str_id, float& time, const char* label = "")
 	{
 		ImGuiWindow* win = GetCurrentWindow();
 		const ImU32 inactive_color = ColorConvertFloat4ToU32(GImGui->Style.Colors[ImGuiCol_Button]);
@@ -57,9 +58,9 @@ namespace ImGui {
 		InvisibleButton(str_id, ImVec2(2 * TIMELINE_RADIUS, 2 * TIMELINE_RADIUS));
 		if (IsItemActive() || IsItemHovered())
 		{
-			ImGui::SetTooltip("%f", time);
-			ImVec2 a(pos.x, GetWindowContentRegionMin().y + win->Pos.y + win->Scroll.y);
-			ImVec2 b(pos.x, GetWindowContentRegionMax().y + win->Pos.y + win->Scroll.y);
+			ImGui::SetTooltip("%s (%f)", label, time);
+			ImVec2 a(pos.x, GetTimelineStart().y);
+			ImVec2 b(pos.x, GetTimelineEnd().y);
 			win->DrawList->AddLine(a, b, line_color);
 		}
 		if (IsItemActive() && IsMouseDragging(0))
@@ -73,7 +74,6 @@ namespace ImGui {
 
 		return changed;
 	}
-
 
 	bool TimelineEvent(const char* str_id, float values[2])
 	{
@@ -148,7 +148,6 @@ namespace ImGui {
 		return changed;
 	}
 
-
 	void EndTimeline(float t)
 	{
 		ImGuiWindow* win = GetCurrentWindow();
@@ -177,7 +176,7 @@ namespace ImGui {
 		for (int i = 0; i <= LINE_COUNT; ++i)
 		{
 			ImVec2 a = GetTimelineStart(); // @r-lyeh: - ImVec2(TIMELINE_RADIUS, 0);
-			a.x += i * (GetTimelineWidth()-1) / LINE_COUNT; // @r-lyeh: -1
+			a.x += i * (GetTimelineWidth() - 1) / LINE_COUNT; // @r-lyeh: -1
 			ImVec2 b = a;
 			b.y += TIMELINE_RADIUS; // start.y;
 			win->DrawList->AddLine(a, b, line_color);
@@ -188,5 +187,4 @@ namespace ImGui {
 
 		EndChild();
 	}
-
 }

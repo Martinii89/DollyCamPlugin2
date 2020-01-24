@@ -6,6 +6,7 @@
 #include "bakkesmod\..\\utils\parser.h"
 #include <functional>
 #include <vector>
+#include "bakkesmod/wrappers/GuiManagerWrapper.h"
 
 namespace Columns
 {
@@ -54,7 +55,7 @@ namespace Columns
 	void locationWidget(std::shared_ptr<DollyCam> dollyCam, CameraSnapshot snap, int i)
 	{
 		static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
-		const char* widgetFormat = "%.1f";
+		const char* widgetFormat = "%.0f";
 		ImGui::PushItemWidth(60);
 		ImGui::SameLine();
 		if (ImGui::DragFloat(("##x" + to_string(i)).c_str(), &snap.location.X, 1.f, 0.f, 0.f, widgetFormat))
@@ -89,7 +90,7 @@ namespace Columns
 	void rotationWidget(std::shared_ptr<DollyCam> dollyCam, CameraSnapshot snap, int i)
 	{
 		static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
-		const char* widgetFormat = "%.1f";
+		const char* widgetFormat = "%.0f";
 		ImGui::PushItemWidth(60);
 		ImGui::SameLine();
 		if (ImGui::DragFloat(("##Pitch" + to_string(i)).c_str(), &snap.rotation.Pitch._value, 1.f, snap.rotation.Pitch._min, snap.rotation.Pitch._max, widgetFormat))
@@ -144,12 +145,12 @@ void DollyCamPlugin::Render()
 {
 	auto columns = Columns::column;
 	int totalWidth = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.GetWidth(); });
-	ImGui::SetNextWindowSizeConstraints(ImVec2(totalWidth, 300), ImVec2(FLT_MAX, FLT_MAX));
+	//ImGui::SetNextWindowSizeConstraints(ImVec2(totalWidth, 300), ImVec2(FLT_MAX, FLT_MAX));
 
 	//setting bg alpha to 0.75
-	auto context = ImGui::GetCurrentContext();
-	const ImGuiCol bg_color_idx = ImGuiCol_WindowBg;
-	context->Style.Colors[bg_color_idx].w = 0.75;
+	//auto context = ImGui::GetCurrentContext();
+	//const ImGuiCol bg_color_idx = ImGuiCol_WindowBg;
+	//context->Style.Colors[bg_color_idx].w = 0.75;
 
 	string menuName = "Snapshots";
 	if (!ImGui::Begin(menuName.c_str(), &isWindowOpen, ImGuiWindowFlags_ResizeFromAnySide))
@@ -160,8 +161,26 @@ void DollyCamPlugin::Render()
 		return;
 	}
 
+	// Make style consistent with BM
+	auto& style = ImGui::GetStyle();
+	if (gameWrapper != nullptr)
+	{
+		auto bm_style_ptr = gameWrapper->GetGUIManager().GetImGuiStyle();
+		if (bm_style_ptr != nullptr)
+		{
+			style = *(ImGuiStyle*)bm_style_ptr;
+		}
+		else {
+			cvarManager->log("bm style ptr was null!!");
+		}
+	}
+	else {
+		cvarManager->log("gamewrapper was null!!");
+	}
+
 	int enabledCount = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.enabled; });
-	ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(totalWidth, -ImGui::GetFrameHeightWithSpacing()));
+	ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(-5, 0));
+	//ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(totalWidth, -ImGui::GetFrameHeightWithSpacing()));
 	ImGui::Columns(enabledCount, "snapshots");
 
 	//Set column widths
@@ -189,6 +208,20 @@ void DollyCamPlugin::Render()
 	}
 
 	ImGui::Separator();
+	ImGui::Columns(1);
+	ImGui::BeginChild("", ImVec2(0, -100));
+	ImGui::Columns(enabledCount);
+
+	//Set column widths
+	index = 0;
+	for (const auto& col : columns)
+	{
+		if (col.enabled)
+		{
+			ImGui::SetColumnWidth(index, col.width);
+		}
+		index++;
+	}
 
 	//Write rows of data
 	index = 1;
@@ -205,6 +238,7 @@ void DollyCamPlugin::Render()
 		}
 		index++;
 	}
+	ImGui::EndChild();
 	ImGui::Columns(1);
 	static bool lockCam = false;
 	ImGui::Checkbox("Lock camera", &lockCam);
@@ -216,39 +250,7 @@ void DollyCamPlugin::Render()
 	auto replayServer = gameWrapper->GetGameEventAsReplay();
 	if (!replayServer.IsNull())
 	{
-		auto replay = replayServer.GetReplay();
-		auto totalReplayTime = replay.GetNumFrames();
-		ImGui::BeginTimeline("Timeline", totalReplayTime);
-
-		static float currentFrame = 0;
-		static float seekFrame = 0.0f;
-
-		auto frames = dollyCam->GetUsedFrames();
-		if (frames.size() > 0)
-		{
-			auto firstFrame = (float)frames[0];
-			if (ImGui::TimelineMarker("FirstFrame", firstFrame));
-		}
-
-		if (ImGui::TimelineMarker("test2", currentFrame))
-		{
-			//cvarManager->log("Seek to:" + to_string(currentFrame));
-			seekFrame = currentFrame;
-		}
-		else {
-			currentFrame = replay.GetCurrentFrame();
-		}
-		if (Columns::IsItemJustMadeInactive())
-		{
-			int _frame = seekFrame; //lambda can't capture static
-			gameWrapper->Execute([_frame, this](GameWrapper* gw) {
-				gw->GetGameEventAsReplay().SkipToFrame(_frame);
-				cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
-				});
-			cvarManager->log("Seek to:" + to_string(seekFrame));
-			//frameSkip = seekFrame;
-		}
-		ImGui::EndTimeline();
+		DrawTimeline(replayServer);
 	}
 
 	ImGui::EndChild();
@@ -259,6 +261,44 @@ void DollyCamPlugin::Render()
 		cvarManager->executeCommand("togglemenu " + GetMenuName());
 	}
 	block_input = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+}
+
+void DollyCamPlugin::DrawTimeline(ReplayServerWrapper& replayServer)
+{
+	ImGui::BeginChild("timelinechild", { 0, 35 });
+	auto replay = replayServer.GetReplay();
+	auto totalReplayTime = replay.GetNumFrames();
+	ImGui::BeginTimeline("Timeline", totalReplayTime);
+
+	static float currentFrame = 0;
+	static float seekFrame = 0.0f;
+
+	auto frames = dollyCam->GetUsedFrames();
+	if (frames.size() > 0)
+	{
+		auto firstFrame = (float)frames[0];
+		if (ImGui::TimelineMarker("FirstFrame", firstFrame, "First frame"));
+	}
+
+	if (ImGui::TimelineMarker("currentFrame", currentFrame, "Current frame"))
+	{
+		seekFrame = currentFrame;
+	}
+	else {
+		currentFrame = replay.GetCurrentFrame();
+	}
+	if (Columns::IsItemJustMadeInactive())
+	{
+		int _frame = seekFrame; //lambda can't capture static
+		gameWrapper->Execute([_frame, this](GameWrapper* gw) {
+			gw->GetGameEventAsReplay().SkipToFrame(_frame);
+			//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
+			});
+		//cvarManager->log("Seek to:" + to_string(seekFrame));
+		//frameSkip = seekFrame;
+	}
+	ImGui::EndTimeline();
+	ImGui::EndChild();
 }
 
 std::string DollyCamPlugin::GetMenuName()
