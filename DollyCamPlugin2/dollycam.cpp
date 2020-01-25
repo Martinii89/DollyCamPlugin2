@@ -302,7 +302,10 @@ void DollyCam::Render(CanvasWrapper cw)
 	for (auto it = (++currentRenderPath->begin()); it != currentRenderPath->end(); ++it)
 	{
 		Vector2 line = cw.Project(it->second.location);
-
+		if (it->first == currentFrame)
+		{
+			visualCamera.DrawCamera(cw, it->second.location, it->second.rotation.ToRotator(), 2.0f);
+		}
 		if (it->first - 2 < currentFrame && it->first + 2 > currentFrame)
 		{
 			cw.SetColor(255, 0, 0, 255);

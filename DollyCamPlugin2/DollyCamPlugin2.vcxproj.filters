@@ -128,6 +128,9 @@
     <ClInclude Include="interpstrategies\tinyspline\parson.h">
       <Filter>InterpolationStrategies\Spline\TinySpline</Filter>
     </ClInclude>
+    <ClInclude Include="VisualCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dollycamplugin.cpp">
@@ -195,6 +198,9 @@
     </ClCompile>
     <ClCompile Include="interpstrategies\tinyspline\parson.c">
       <Filter>InterpolationStrategies\Spline\TinySpline</Filter>
+    </ClCompile>
+    <ClCompile Include="VisualCamera.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

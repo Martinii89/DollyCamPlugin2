@@ -7,8 +7,7 @@
 #include "models.h"
 #include "interpstrategies/interpstrategy.h"
 #include "bakkesmod\wrappers\includes.h"
-
-
+#include "VisualCamera.h"
 
 class DollyCam
 {
@@ -20,6 +19,7 @@ private:
 	std::shared_ptr<InterpStrategy> rotationInterpStrategy;
 
 	std::shared_ptr<savetype> currentRenderPath;
+	VisualCamera visualCamera;
 	bool usesSameInterp = false;
 	bool isActive = false;
 	bool renderPath = false;
@@ -27,7 +27,6 @@ private:
 	void UpdateRenderPath();
 	void CheckIfSameInterp();
 	void ResetAnimations();
-
 
 public:
 	DollyCam(std::shared_ptr<GameWrapper> _gameWrapper, std::shared_ptr<CVarManagerWrapper> _cvarManager, std::shared_ptr<IGameApplier> _gameApplier);
@@ -61,9 +60,7 @@ public:
 	std::shared_ptr<savetype> GetCurrentPath();
 	void SetCurrentPath(std::shared_ptr<savetype> newPath);
 
-
 	bool lockCamera = false;
 	bool gotLockPov = false;
 	POV lockPOV;
 };
-

@@ -50,7 +50,7 @@ public:
 	//Interp config methods
 	void OnBezierCommand(vector<string> params);
 	virtual void Render();
-	void DrawTimeline(ReplayServerWrapper& replayServer);
+	void DrawTimeline(bool showFirstSnap, bool showPathDuration);
 	virtual std::string GetMenuName();
 	virtual std::string GetMenuTitle();
 	virtual void SetImGuiContext(uintptr_t ctx);

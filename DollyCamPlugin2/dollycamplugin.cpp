@@ -30,7 +30,7 @@ bool DollyCamPlugin::IsApplicable()
 
 void DollyCamPlugin::CameraLock(ServerWrapper camInput, void* params, string funcName)
 {
-	if (dollyCam->lockCamera)
+	if (dollyCam->lockCamera && isWindowOpen)
 	{
 		// This is the same as calling MoveCamera with a CameraMovement with all zeros
 		LockCamera(gameWrapper.get(), (void*)camInput.memory_address);
