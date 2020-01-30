@@ -39,6 +39,7 @@ public:
 	void OnReplayCommand(vector<string> params);
 	void OnSnapshotCommand(vector<string> params);
 	void OnSnapshotModifyCommand(vector<string> params);
+	void OnSetCameraSettings(vector<string> params);
 
 	void OnLiveCommand(vector<string> params);
 

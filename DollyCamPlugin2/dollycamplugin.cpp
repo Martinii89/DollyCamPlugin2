@@ -14,6 +14,8 @@ using namespace std::placeholders;
 
 BAKKESMOD_PLUGIN(DollyCamPlugin, "Dollycam plugin", "2", PLUGINTYPE_REPLAY | PLUGINTYPE_SPECTATOR)
 
+
+
 bool DollyCamPlugin::IsApplicable()
 {
 	if (gameWrapper->IsInReplay() || gameWrapper->IsInGame())
@@ -30,33 +32,25 @@ bool DollyCamPlugin::IsApplicable()
 
 void DollyCamPlugin::CameraLock(ServerWrapper camInput, void* params, string funcName)
 {
-	if (dollyCam->lockCamera && isWindowOpen)
+	static int lAltIndex = gameWrapper->GetFNameIndexByString("LeftAlt");
+	bool altPressed = gameWrapper->IsKeyPressed(lAltIndex);
+	bool lockCamera = altPressed ? !dollyCam->lockCamera : dollyCam->lockCamera;
+	if (lockCamera && isWindowOpen)
 	{
-		// This is the same as calling MoveCamera with a CameraMovement with all zeros
-		LockCamera(gameWrapper.get(), (void*)camInput.memory_address);
+		auto pc = gameWrapper->GetPlayerController();
+		// Lock mouse movement
+		pc.SetALookUp(0);
+		pc.SetATurn(0);
 
-		//CameraMovement movement;
-		// Moves the camera forward
-		//movement.Forward = 100;
-
-		// Tilts the camera backwards
-		//movement.LookUp = 100;
-
-		// Moves the camera to the right
-		//movement.Strafe = 100;
-
-		// Turn the camera to the right
-		//movement.Turn = 100;
-
-		//Moves the camera straight up
-		//movement.Up = 100;
-
-		//MoveCamera(gameWrapper.get(), (void*)camInput.memory_address, movement);
 	}
 }
 
 void DollyCamPlugin::onLoad()
 {
+	cvarManager->setBind("RightControl+F11", "togglemenu " + GetMenuName());
+
+	//cvarManager->executeCommand("bind \"RightControl+F11\" \"togglemenu "+ GetMenuName() + "\"");
+
 	std::shared_ptr<IGameApplier> gameApplier = std::make_shared<RealGameApplier>(RealGameApplier(gameWrapper));
 	dollyCam = std::make_shared<DollyCam>(DollyCam(gameWrapper, cvarManager, gameApplier));
 	renderCameraPath = std::make_shared<bool>(true);
@@ -64,7 +58,7 @@ void DollyCamPlugin::onLoad()
 	gameWrapper->HookEvent("Function TAGame.CameraState_Replay_TA.UpdatePOV", bind(&DollyCamPlugin::onTick, this, _1));
 	gameWrapper->HookEvent("Function TAGame.GameInfo_Replay_TA.InitGame", bind(&DollyCamPlugin::onReplayOpen, this, _1));
 	gameWrapper->HookEvent("Function TAGame.GFxHUD_Replay_TA.Destroyed", bind(&DollyCamPlugin::onReplayClose, this, _1));
-	gameWrapper->HookEventWithCallerPost<ServerWrapper>("Function TAGame.PlayerInput_TA.PlayerInput", bind(&DollyCamPlugin::CameraLock, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	gameWrapper->HookEventWithCaller<ServerWrapper>("Function TAGame.PlayerInput_TA.PlayerInput", bind(&DollyCamPlugin::CameraLock, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
 	cvarManager->registerCvar("dolly_interpmode", "5", "Used interp mode", true, true, 0, true, 2000).addOnValueChanged(bind(&DollyCamPlugin::OnInterpModeChanged, this, _1, _2));
 
@@ -106,6 +100,10 @@ void DollyCamPlugin::onLoad()
 	cvarManager->registerNotifier("dolly_bezier_weight", bind(&DollyCamPlugin::OnBezierCommand, this, _1), "Change bezier weight of given snapshot (Unsupported?). Usage: dolly_bezier_weight", PERMISSION_ALL);
 	cvarManager->registerCvar("dolly_chaikin_degree", "0", "Amount of times to apply chaikin to the spline", true, true, 0, true, 20).addOnValueChanged(bind(&DollyCamPlugin::OnChaikinChanged, this, _1, _2));;
 	cvarManager->registerCvar("dolly_spline_acc", "1000", "Spline interpolation time accuracy", true, true, 100, false);
+
+	cvarManager->registerNotifier("dolly_camsettings_set", bind(&DollyCamPlugin::OnSetCameraSettings, this, _1), "Change camera settings", PERMISSION_REPLAY);
+
+
 	dollyCam->SetRenderPath(true);
 }
 
@@ -156,7 +154,8 @@ void DollyCamPlugin::OnAllCommand(vector<string> params)
 			return;
 		}
 		string filename = params.at(1);
-		dollyCam->SaveToFile(filename);
+		string fullPath = "bakkesmod/data/campaths/" + filename;
+		dollyCam->SaveToFile(fullPath);
 	}
 	else if (command.compare("dolly_path_load") == 0)
 	{
@@ -166,12 +165,13 @@ void DollyCamPlugin::OnAllCommand(vector<string> params)
 			return;
 		}
 		string filename = params.at(1);
-		if (!file_exists(filename))
+		string fullPath = "bakkesmod/data/campaths/" + filename;
+		if (!file_exists(fullPath))
 		{
 			cvarManager->log("File does not exist!");
 			return;
 		}
-		dollyCam->LoadFromFile(filename);
+		dollyCam->LoadFromFile(fullPath);
 	}
 }
 
@@ -418,6 +418,11 @@ void DollyCamPlugin::OnSnapshotModifyCommand(vector<string> params)
 		}
 		selectedSnapshot = dollyCam->GetSnapshot(snapshot_id);
 	}
+}
+
+void DollyCamPlugin::OnSetCameraSettings(vector<string> params)
+{
+	// Redacted
 }
 
 void DollyCamPlugin::OnLiveCommand(vector<string> params)
