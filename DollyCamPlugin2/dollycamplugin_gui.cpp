@@ -1,7 +1,8 @@
 #include "dollycamplugin.h"
-#include "imgui\imgui.h"
-#include "imgui\imgui_internal.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "imgui/imgui_timeline.h"
+#include "imgui/imgui_tabs.h"
 #include "serialization.h"
 #include "bakkesmod\..\\utils\parser.h"
 #include <functional>
@@ -146,7 +147,7 @@ namespace Columns
 	auto noWidget = [](std::shared_ptr<DollyCam> dollyCam, CameraSnapshot snap, int i) {};
 	vector< TableColumns > column{
 		{"#",			25,		true, false, [](CameraSnapshot snap, int i) {return to_string(i); },								noWidget},
-		{"Frame",		40,		true, false, [](CameraSnapshot snap, int i) {return to_string(snap.frame); },						noWidget},
+		{"Frame",		60,		true, false, [](CameraSnapshot snap, int i) {return to_string(snap.frame); },						noWidget},
 		//{"Time",		60,		true, false, [](CameraSnapshot snap, int i) {return to_string_with_precision(snap.timeStamp, 2); }, noWidget},
 		{"Location",	130,	true, true, [](CameraSnapshot snap, int i) {return vector_to_string(snap.location); },				locationWidget},
 		{"Rotation",	130,	true, true, [](CameraSnapshot snap, int i) {return rotator_to_string(snap.rotation.ToRotator()); },rotationWidget},
@@ -186,14 +187,8 @@ namespace Columns
 
 void DollyCamPlugin::Render()
 {
-	auto columns = Columns::column;
-	int totalWidth = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.GetWidth(); });
-	//ImGui::SetNextWindowSizeConstraints(ImVec2(totalWidth, 300), ImVec2(FLT_MAX, FLT_MAX));
+	//int totalWidth = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.GetWidth(); });
 
-	//setting bg alpha to 0.75
-	//auto context = ImGui::GetCurrentContext();
-	//const ImGuiCol bg_color_idx = ImGuiCol_WindowBg;
-	//context->Style.Colors[bg_color_idx].w = 0.75;
 
 	string menuName = "Snapshots";
 	if (!ImGui::Begin(menuName.c_str(), &isWindowOpen, ImGuiWindowFlags_ResizeFromAnySide))
@@ -204,14 +199,136 @@ void DollyCamPlugin::Render()
 		return;
 	}
 
+
 	// Make style consistent with BM
-	auto& style = ImGui::GetStyle();
+	SetStyle();
+	//ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(0, 0));
+	ImGui::BeginTabBar("#");
+	ImGui::DrawTabsBackground();
+	if (ImGui::AddTab("Keyframes"))
+	{
+		ImGui::BeginChild("#", ImVec2(-5, 0));
+		DrawSnapshots();
+
+		// Draw checkbox for locking the camera
+		static bool lockCam = false;
+		ImGui::Checkbox("Lock camera", &lockCam);;
+		dollyCam->lockCamera = ImGui::IsMouseDragging() || lockCam || view_index > 0;
+
+		//static int CinderSpinnervalue = 50;
+		//ImGui::DragInt("CinderSpinner", &CinderSpinnervalue, 1.0f, 0, 100);
+
+		DrawTimeline();
+		ImGui::EndChild();
+	}
+
+	if (ImGui::AddTab("Settings"))
+	{
+		ImGui::BeginChild("#", ImVec2(-5, 0));
+		//interpoltion method selectors
+		DrawInterpolationSettings();
+
+		ImGui::Separator();
+		ImGui::Dummy({ 0, 10 });
+
+		// Path clear\save\load
+		if(ImGui::Button("Clear path")){
+			dollyCam->Reset();
+		}
+		ImGui::SameLine();
+		static char filename[256];
+		ImGui::PushItemWidth(150);
+		ImGui::InputText("Filename", filename, IM_ARRAYSIZE(filename));
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+		if (ImGui::Button("Save")) {
+			dollyCam->SaveToFile(filename);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Load")) {
+			dollyCam->LoadFromFile(filename);
+		}
+
+		ImGui::EndChild();
+	}
+	ImGui::EndTabBar();
+
+	//ImGui::EndChild();
+	ImGui::End();
+
+	if (!isWindowOpen)
+	{
+		cvarManager->executeCommand("togglemenu " + GetMenuName());
+	}
+	block_input = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+}
+
+void DollyCamPlugin::DrawInterpolationSettings()
+{
+	static int interpolation_location = cvarManager->getCvar("dolly_interpmode_location").getIntValue();
+	static int interpolation_rotation = cvarManager->getCvar("dolly_interpmode_rotation").getIntValue();
+	static std::vector<std::string> interpolationMethods = { "Linear" , "Bezier", "Cosine", "Linear", "Catmull", "Spline" };
+	//static int currentInterpolation = dollyCam->GetInterpolationMethod()
+
+	// Draw location interpolation selector
+	ImGui::Text("Select interpolation methods");
+	ImGui::PushItemWidth(100);
+	if (ImGui::BeginCombo("Location method", interpolationMethods.at(interpolation_location).c_str()))
+	{
+		for (size_t i = 0; i < interpolationMethods.size(); i++)
+		{
+			bool is_selected = (interpolation_location == i);
+			std::string label = interpolationMethods.at(i) + "##" + std::to_string(i);
+			if (ImGui::Selectable(label.c_str(), is_selected))
+			{
+				if (interpolation_location != i)
+				{
+					interpolation_location = i;
+					cvarManager->getCvar("dolly_interpmode_location").setValue(std::to_string(i));
+				}
+			}
+			if (is_selected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+	// Draw rotation interpolation selector
+	if (ImGui::BeginCombo("Rotation method", interpolationMethods.at(interpolation_rotation).c_str()))
+	{
+		for (size_t i = 0; i < interpolationMethods.size(); i++)
+		{
+			bool is_selected = (interpolation_rotation == i);
+			std::string label = interpolationMethods.at(i) + "##" + std::to_string(i);
+			if (ImGui::Selectable(label.c_str(), is_selected))
+			{
+				if (interpolation_rotation != i)
+				{
+					interpolation_rotation = i;
+					cvarManager->getCvar("dolly_interpmode_rotation").setValue(std::to_string(i));
+				}
+			}
+			if (is_selected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	ImGui::PopItemWidth();
+}
+
+
+void DollyCamPlugin::SetStyle()
+{
+	auto& style = ImGui::GetUserStyle();
 	if (gameWrapper != nullptr)
 	{
-		auto bm_style_ptr = gameWrapper->GetGUIManager().GetImGuiStyle();
+		auto bm_style_ptr = gameWrapper->GetGUIManager().GetImGuiUserStyle();
 		if (bm_style_ptr != nullptr)
 		{
-			style = *(ImGuiStyle*)bm_style_ptr;
+			style = *(ImGui::ImGuiUserStyle*)bm_style_ptr;
 		}
 		else {
 			cvarManager->log("bm style ptr was null!!");
@@ -220,10 +337,12 @@ void DollyCamPlugin::Render()
 	else {
 		cvarManager->log("gamewrapper was null!!");
 	}
+}
 
+void DollyCamPlugin::DrawSnapshots()
+{
+	auto columns = Columns::column;
 	int enabledCount = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.enabled; });
-	ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(0, 0));
-	//ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(totalWidth, -ImGui::GetFrameHeightWithSpacing()));
 	ImGui::Columns(enabledCount, "snapshots");
 
 	//Set column widths
@@ -252,7 +371,7 @@ void DollyCamPlugin::Render()
 
 	ImGui::Separator();
 	ImGui::Columns(1);
-	ImGui::BeginChild("", ImVec2(0, -5 * ImGui::GetTextLineHeightWithSpacing()));
+	ImGui::BeginChild("", ImVec2(0, -4 * ImGui::GetTextLineHeightWithSpacing()));
 	ImGui::Columns(enabledCount);
 
 	//Set column widths
@@ -283,41 +402,12 @@ void DollyCamPlugin::Render()
 	}
 	ImGui::EndChild();
 	ImGui::Columns(1);
-	static bool lockCam = false;
-	static bool showFirstSnap = false;
-	static bool showPathDuration = true;
-	//if (ImGui::Button("Clear view"))
-	//{
-	//	view_index = -1;
-	//	dollyCam->gameWrapper->Execute([](GameWrapper* gw) {
-	//		gw->GetCamera().SetLockedFOV(false);
-	//		});
-	//}
-	//ImGui::SameLine();
-	ImGui::Checkbox("Lock camera", &lockCam);;
-	//ImGui::SameLine();
-	//ImGui::Checkbox("First keyframe", &showFirstSnap);
-	//ImGui::SameLine();
-	//ImGui::Checkbox("First and last", &showPathDuration);
-	dollyCam->lockCamera = ImGui::IsMouseDragging() || lockCam || view_index > 0;
-
-	static int CinderSpinnervalue = 50;
-	ImGui::DragInt("CinderSpinner", &CinderSpinnervalue, 1.0f, 0, 100);
-
-	DrawTimeline(showFirstSnap, showPathDuration);
-
-	ImGui::EndChild();
-	ImGui::End();
-
-	if (!isWindowOpen)
-	{
-		cvarManager->executeCommand("togglemenu " + GetMenuName());
-	}
-	block_input = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
 }
 
-void DollyCamPlugin::DrawTimeline(bool showFirstSnap, bool showPathDuration)
+void DollyCamPlugin::DrawTimeline()
 {
+	static bool showFirstSnap = false;
+	static bool showPathDuration = true;
 	auto replayServer = gameWrapper->GetGameEventAsReplay();
 	ImGui::BeginChild("timelinechild", { 0, 30 });
 	static float totalReplayTime = 100.0f;

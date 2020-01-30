@@ -3,6 +3,7 @@
 #include "bakkesmod\wrappers\replayserverwrapper.h"
 #include "bakkesmod\wrappers\GameObject\CameraWrapper.h"
 #include "utils/parser.h"
+#include "utils/io.h"
 
 #include "interpstrategies\supportedstrategies.h"
 #include "serialization.h"
@@ -302,7 +303,7 @@ void DollyCam::Render(CanvasWrapper cw)
 	for (auto it = (++currentRenderPath->begin()); it != currentRenderPath->end(); ++it)
 	{
 		Vector2 line = cw.Project(it->second.location);
-		if (it->first == currentFrame)
+		if (it->first == currentFrame && cvarManager->getCvar("dolly_render_visualcam").getBoolValue())
 		{
 			visualCamera.DrawCamera(cw, it->second.location, it->second.rotation.ToRotator(), 2.0f);
 		}
@@ -411,7 +412,7 @@ shared_ptr<InterpStrategy> DollyCam::CreateInterpStrategy(int interpStrategy)
 		return std::make_shared<CosineInterpStrategy>(CosineInterpStrategy(currentPath));
 		break;
 	case 3:
-		std::make_shared<LinearInterpStrategy>(LinearInterpStrategy(currentPath, chaikinDegree));
+		return std::make_shared<LinearInterpStrategy>(LinearInterpStrategy(currentPath, chaikinDegree));
 		//return std::make_shared<HermiteInterpStrategy>(HermiteInterpStrategy(currentPath));
 		break;
 	case 4:
@@ -429,6 +430,7 @@ shared_ptr<InterpStrategy> DollyCam::CreateInterpStrategy(int interpStrategy)
 
 void DollyCam::SaveToFile(string filename)
 {
+	string fullPath = "bakkesmod/data/campaths/" + filename;
 	std::map<string, CameraSnapshot> pathCopy;
 	for (auto& i : *currentPath)
 	{
@@ -436,14 +438,20 @@ void DollyCam::SaveToFile(string filename)
 	}
 	json j = pathCopy;
 	ofstream myfile;
-	myfile.open(filename);
+	myfile.open(fullPath);
 	myfile << j.dump(4);
 	myfile.close();
 }
 
 void DollyCam::LoadFromFile(string filename)
 {
-	std::ifstream i(filename);
+	string fullPath = "bakkesmod/data/campaths/" + filename;
+	if (!file_exists(fullPath))
+	{
+		cvarManager->log("File does not exist!");
+		return;
+	}
+	std::ifstream i(fullPath);
 	json j;
 	i >> j;
 	currentPath->clear();

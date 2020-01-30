@@ -5,7 +5,6 @@
 
 #include "utils\parser.h"
 #include "serialization.h"
-#include "utils/io.h"
 
 #include "libs/bakkesutils.h"
 #pragma comment(lib, "BakkesUtils.lib")
@@ -53,7 +52,7 @@ void DollyCamPlugin::onLoad()
 
 	std::shared_ptr<IGameApplier> gameApplier = std::make_shared<RealGameApplier>(RealGameApplier(gameWrapper));
 	dollyCam = std::make_shared<DollyCam>(DollyCam(gameWrapper, cvarManager, gameApplier));
-	renderCameraPath = std::make_shared<bool>(true);
+	renderCameraPath = std::make_shared<bool>(true);;
 
 	gameWrapper->HookEvent("Function TAGame.CameraState_Replay_TA.UpdatePOV", bind(&DollyCamPlugin::onTick, this, _1));
 	gameWrapper->HookEvent("Function TAGame.GameInfo_Replay_TA.InitGame", bind(&DollyCamPlugin::onReplayOpen, this, _1));
@@ -68,8 +67,8 @@ void DollyCamPlugin::onLoad()
 		.addOnValueChanged(bind(&DollyCamPlugin::OnInterpModeChanged, this, _1, _2));
 
 	cvarManager->registerCvar("dolly_render", "1", "Render the current camera path", true, true, 0, true, 1).bindTo(renderCameraPath);
-
 	cvarManager->registerCvar("dolly_render_frame", "1", "Render frame numbers on the path", true, true, 0, true, 1).addOnValueChanged(bind(&DollyCamPlugin::OnRenderFramesChanged, this, _1, _2));
+	cvarManager->registerCvar("dolly_render_visualcam", "1", "Render a visual representation of the camera", true, true, 0, true, 1);
 
 	cvarManager->registerNotifier("dolly_path_clear", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Clears the current dollycam path", PERMISSION_ALL);
 	cvarManager->registerNotifier("dolly_snapshot_take", bind(&DollyCamPlugin::OnReplayCommand, this, _1), "Saves the current camera view as snapshot", PERMISSION_REPLAY);
@@ -154,8 +153,7 @@ void DollyCamPlugin::OnAllCommand(vector<string> params)
 			return;
 		}
 		string filename = params.at(1);
-		string fullPath = "bakkesmod/data/campaths/" + filename;
-		dollyCam->SaveToFile(fullPath);
+		dollyCam->SaveToFile(filename);
 	}
 	else if (command.compare("dolly_path_load") == 0)
 	{
@@ -165,13 +163,7 @@ void DollyCamPlugin::OnAllCommand(vector<string> params)
 			return;
 		}
 		string filename = params.at(1);
-		string fullPath = "bakkesmod/data/campaths/" + filename;
-		if (!file_exists(fullPath))
-		{
-			cvarManager->log("File does not exist!");
-			return;
-		}
-		dollyCam->LoadFromFile(fullPath);
+		dollyCam->LoadFromFile(filename);
 	}
 }
 

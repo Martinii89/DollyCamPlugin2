@@ -107,7 +107,9 @@ namespace ImGui
 
     IMGUI_API static ImGuiUserStyle UserStyle;
 
-    /// Additional prototype to retrieve user-defined colors in this header (to prevent foward compatilibity conflicts)
+	ImGui::ImGuiUserStyle& GetUserStyle();
+
+	/// Additional prototype to retrieve user-defined colors in this header (to prevent foward compatilibity conflicts)
     IMGUI_API const ImU32 GetColorU32(ImGuiUserCol_ idx, float alpha_mul = 0.0f);
 
     ///Bitmask flags for telling _drawPartialRect() what edges to draw
