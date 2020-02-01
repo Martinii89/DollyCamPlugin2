@@ -11,6 +11,24 @@
 
 static int view_index = -1;
 
+bool SliderFloatWithSteps(const char* label, float* v, float v_min, float v_max, float v_step, const char* display_format)
+{
+	if (!display_format)
+		display_format = "%.3f";
+
+	char text_buf[64] = {};
+	ImFormatString(text_buf, IM_ARRAYSIZE(text_buf), display_format, *v);
+
+	// Map from [v_min,v_max] to [0,N]
+	const int countValues = int((v_max - v_min) / v_step);
+	int v_i = int((*v - v_min) / v_step);
+	const bool value_changed = ImGui::SliderInt(label, &v_i, 0, countValues, text_buf);
+
+	// Remap from [0,N] to [v_min,v_max]
+	*v = v_min + float(v_i) * v_step;
+	return value_changed;
+}
+
 namespace Columns
 {
 	bool IsItemActiveLastFrame()
@@ -90,8 +108,6 @@ namespace Columns
 			}
 		}
 		ImGui::PopItemWidth();
-		//ImGui::EndChild();
-		//ImGui::PopStyleVar();
 	}
 
 	void rotationWidget(std::shared_ptr<DollyCam> dollyCam, CameraSnapshot snap, int i)
@@ -185,12 +201,19 @@ namespace Columns
 	};
 }
 
+static std::string saveloadStatus = "";
+
+void SetStatusTimeout(std::shared_ptr<GameWrapper> gw, std::string status)
+{
+	saveloadStatus = status;
+	gw->SetTimeout([](GameWrapper*) {saveloadStatus = ""; }, 2);
+}
+
 void DollyCamPlugin::Render()
 {
 	//int totalWidth = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.GetWidth(); });
-
-
 	string menuName = "Snapshots";
+	ImGui::SetNextWindowPos({ 600,0 }, ImGuiCond_Once);
 	if (!ImGui::Begin(menuName.c_str(), &isWindowOpen, ImGuiWindowFlags_ResizeFromAnySide))
 	{
 		// Early out if the window is collapsed, as an optimization.
@@ -199,10 +222,8 @@ void DollyCamPlugin::Render()
 		return;
 	}
 
-
 	// Make style consistent with BM
 	SetStyle();
-	//ImGui::BeginChild("#CurrentSnapshotsTab", ImVec2(0, 0));
 	ImGui::BeginTabBar("#");
 	ImGui::DrawTabsBackground();
 	if (ImGui::AddTab("Keyframes"))
@@ -211,9 +232,7 @@ void DollyCamPlugin::Render()
 		DrawSnapshots();
 
 		// Draw checkbox for locking the camera
-		static bool lockCam = false;
-		ImGui::Checkbox("Lock camera", &lockCam);;
-		dollyCam->lockCamera = ImGui::IsMouseDragging() || lockCam || view_index > 0;
+		ImGui::Checkbox("Lock camera", &guiState.camLock);;
 
 		//static int CinderSpinnervalue = 50;
 		//ImGui::DragInt("CinderSpinner", &CinderSpinnervalue, 1.0f, 0, 100);
@@ -232,35 +251,236 @@ void DollyCamPlugin::Render()
 		ImGui::Dummy({ 0, 10 });
 
 		// Path clear\save\load
-		if(ImGui::Button("Clear path")){
-			dollyCam->Reset();
+		DrawSaveLoadSettings();
+
+		ImGui::EndChild();
+	}
+	if (ImGui::AddTab("Camera override"))
+	{
+		auto& settings = guiState.cameraOverride;
+		auto& overrideSettings = settings.cameraSettings;
+		ImGui::BeginChild("#", ImVec2(-5, 0));
+
+		ImGui::Text("Use these settings to override the player camera");
+		ImGui::Checkbox("Enabled", &settings.enabled);
+
+		SliderFloatWithSteps("FOV", &overrideSettings.FOV, 60, 110, 10, "%.0f");
+		SliderFloatWithSteps("Distance", &overrideSettings.Distance, 100, 400, 10, "%.2f");
+		SliderFloatWithSteps("Height", &overrideSettings.Height, 40, 200, 10, "%.2f");
+		SliderFloatWithSteps("Angle", &overrideSettings.Pitch, -15, 0, 1, "%.2f");
+		SliderFloatWithSteps("Stiffness", &overrideSettings.Stiffness, 0, 1, 0.05, "%.2f");
+		SliderFloatWithSteps("SwivelSpeed", &overrideSettings.SwivelSpeed, 1, 10, 0.1, "%.2f");
+		SliderFloatWithSteps("TransitionSpeed", &overrideSettings.TransitionSpeed, 1, 2, 0.1, "%.2f");
+
+		if (ImGui::Button("Read current settings"))
+		{
+			ReadPlayerCameraSettings();
 		}
-		ImGui::SameLine();
-		static char filename[256];
-		ImGui::PushItemWidth(150);
-		ImGui::InputText("Filename", filename, IM_ARRAYSIZE(filename));
-		ImGui::PopItemWidth();
-		ImGui::SameLine();
-		if (ImGui::Button("Save")) {
-			dollyCam->SaveToFile(filename);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Load")) {
-			dollyCam->LoadFromFile(filename);
+
+		if (settings.enabled)
+		{
+			OverridePlayerCameraSettings();
 		}
 
 		ImGui::EndChild();
 	}
+
 	ImGui::EndTabBar();
 
-	//ImGui::EndChild();
+	ImGui::End();
+
+	auto& sidebarSetting = guiState.sidebarSettings;
+
+	//static float alpha = 0.0;
+	//static float posOffset = 150;
+
+	auto mPosX = ImGui::GetMousePos().x;
+	//Hide sidebar
+	if (mPosX > sidebarSetting.triggerWidth && !ImGui::IsMouseDragging()) {
+		if (sidebarSetting.alpha > 0) {
+			sidebarSetting.alpha -= 0.02;
+			sidebarSetting.alpha = std::max(0.0f, sidebarSetting.alpha);
+		}
+		if (sidebarSetting.posOffset < 150)
+			sidebarSetting.posOffset += 3;
+	}
+	//Show sidebar
+	if (mPosX < 250) {
+		if (sidebarSetting.alpha < 1) {
+			sidebarSetting.alpha += 0.02;
+			sidebarSetting.alpha = std::min(1.0f, sidebarSetting.alpha);
+		}
+		if (sidebarSetting.posOffset > 0)
+			sidebarSetting.posOffset -= 3;
+	}
+	ImGui::SetNextWindowPos({ 0 - sidebarSetting.posOffset, 0 }, ImGuiCond_Always);
+	ImGui::SetNextWindowSize({ sidebarSetting.width, sidebarSetting.height });
+
+	ImGui::Begin("##sidebar", &isWindowOpen, { 150, 1080 }, sidebarSetting.alpha, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+	DrawSnapshotsNodes();
 	ImGui::End();
 
 	if (!isWindowOpen)
 	{
 		cvarManager->executeCommand("togglemenu " + GetMenuName());
 	}
+	dollyCam->lockCamera = ImGui::IsMouseDragging() || guiState.camLock || view_index > 0;
 	block_input = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+}
+
+void DollyCamPlugin::DrawSnapshotsNodes()
+{
+	ImGui::BeginChild("#", ImVec2(-5, -50));
+	auto& sidebarSettings = guiState.sidebarSettings;
+	ImGui::Checkbox("Compact", &sidebarSettings.compact);
+	ImGui::Checkbox("Lock Camera", &guiState.camLock);
+	static float subScale = 0.8;
+	int i = 1;
+	for (const auto& data : *dollyCam->GetCurrentPath())
+	{
+		auto snap = data.second;;
+		auto label = std::to_string(data.second.frame) + "##" + std::to_string(i);
+		ImGui::AlignTextToFramePadding();
+		bool open = ImGui::TreeNode(label.c_str());
+
+		// View toggle
+		bool active = (i == view_index);
+		std::string viewButtonLabel = "##view" + to_string(i);
+		ImGui::SameLine(ImGui::GetWindowWidth() - 60);
+		bool pressed = ImGui::RadioButton(viewButtonLabel.c_str(), active);
+		if (pressed && active) { //If this one was already active. clear out the group and unlock the camera
+			view_index = -1;
+			dollyCam->gameWrapper->Execute([](GameWrapper* gw) {
+				gw->GetCamera().SetLockedFOV(false);
+				});
+		}
+		if (pressed && !active) view_index = i;
+		if (i == view_index)
+		{
+			POV pov = { snap.location, snap.rotation.ToRotator(), snap.FOV };
+			dollyCam->gameWrapper->Execute([pov](GameWrapper* gw) {
+				auto camera = gw->GetCamera();
+				camera.SetPOV(pov);
+				camera.SetFocusActor("");
+				});
+		}
+
+		//Delete button
+		ImGui::SameLine(ImGui::GetWindowWidth() - 30);
+		std::string removeButtonLabel = "X##remove" + to_string(i);
+		if (ImGui::Button(removeButtonLabel.c_str()))
+		{
+			dollyCam->gameWrapper->Execute([this, i](GameWrapper* gw) {dollyCam->DeleteFrameByIndex(i); });
+		}
+		//Make subwidgets a little smaller
+		ImGui::SetWindowFontScale(subScale);
+		if (open)
+		{
+			static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
+
+			bool doUpdateFrame = false;
+			static int updateLimit = guiState.sidebarSettings.editTimeLimit;
+			auto lspeed = sidebarSettings.LocationSpeed;
+			auto lpower = sidebarSettings.LocationSpeed;
+			auto rSpeed = sidebarSettings.RotationSpeed;
+			auto rpower = sidebarSettings.RotationPower;
+
+			if (!sidebarSettings.compact)
+			{
+				ImGui::Columns(2, 0, false);
+
+				ImGui::Text("Rotation");
+				if (ImGui::DragFloat(("Pitch##" + to_string(i)).c_str(), &snap.rotation.Pitch._value, rSpeed, snap.rotation.Pitch._min, snap.rotation.Pitch._max, "%.0f", rpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("Yaw##" + to_string(i)).c_str(), &snap.rotation.Yaw._value, rSpeed, snap.rotation.Yaw._min, snap.rotation.Yaw._max, "%.0f", rpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("Roll##" + to_string(i)).c_str(), &snap.rotation.Roll._value, rSpeed, snap.rotation.Roll._min, snap.rotation.Roll._max, "%.0f", rpower)) { doUpdateFrame = true; }
+
+				ImGui::NextColumn();
+
+				ImGui::Text("Location");
+				if (ImGui::DragFloat(("X##x" + to_string(i)).c_str(), &snap.location.X, lspeed, 0.f, 0.f, "%.0f", lpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("Y##y" + to_string(i)).c_str(), &snap.location.Y, lspeed, 0.f, 0.f, "%.0f", lpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("Z##z" + to_string(i)).c_str(), &snap.location.Z, lspeed, 0.f, 0.f, "%.0f", lpower)) { doUpdateFrame = true; }
+				ImGui::NextColumn();
+
+				ImGui::Columns(1, 0, false);
+
+				if (SliderFloatWithSteps("FOV", &snap.FOV, 60, 110, 1, "%.0f")) { doUpdateFrame = true; };
+			}
+			else {
+				ImGui::PushItemWidth(30);
+				if (ImGui::DragFloat(("##Pitch" + to_string(i)).c_str(), &snap.rotation.Pitch._value, rSpeed, snap.rotation.Pitch._min, snap.rotation.Pitch._max, "Pitch", rpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("##x" + to_string(i)).c_str(), &snap.location.X, lspeed, 0.f, 0.f, "X", lpower)) { doUpdateFrame = true; }ImGui::SameLine();
+
+				if (ImGui::DragFloat(("##Yaw" + to_string(i)).c_str(), &snap.rotation.Yaw._value, rSpeed, snap.rotation.Yaw._min, snap.rotation.Yaw._max, "Yaw", rpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("##y" + to_string(i)).c_str(), &snap.location.Y, lspeed, 0.f, 0.f, "Y", lpower)) { doUpdateFrame = true; }ImGui::SameLine();
+
+				if (ImGui::DragFloat(("##Roll" + to_string(i)).c_str(), &snap.rotation.Roll._value, rSpeed, snap.rotation.Roll._min, snap.rotation.Roll._max, "Roll", rpower)) { doUpdateFrame = true; }
+				if (ImGui::DragFloat(("##z" + to_string(i)).c_str(), &snap.location.Z, lspeed, 0.f, 0.f, "Z", lpower)) { doUpdateFrame = true; }ImGui::SameLine();
+
+				ImGui::PopItemWidth();
+				if (SliderFloatWithSteps(("##FOV" + to_string(i)).c_str(), &snap.FOV, 60, 110, 1, "FOV: %.0f")) { doUpdateFrame = true; }
+			}
+			if (doUpdateFrame && chrono::duration_cast<std::chrono::milliseconds> (chrono::system_clock::now() - lastUpdate).count() > updateLimit)
+			{
+				lastUpdate = chrono::system_clock::now();
+				dollyCam->gameWrapper->Execute([this, snap](GameWrapper* gw) {dollyCam->UpdateFrame(snap); });
+			}
+			ImGui::Separator();
+
+			ImGui::TreePop();
+		}
+		ImGui::SetWindowFontScale(1);
+		i++;
+	}
+
+	ImGui::EndChild();
+}
+
+void DollyCamPlugin::DrawSaveLoadSettings()
+{
+	if (ImGui::Button("Clear path")) {
+		dollyCam->Reset();
+		SetStatusTimeout(gameWrapper, "Path cleared");
+	}
+	ImGui::SameLine();
+	static char filename[256];
+
+	ImGui::PushItemWidth(150);
+	ImGui::InputText("Filename", filename, IM_ARRAYSIZE(filename));
+	ImGui::PopItemWidth();
+	ImGui::SameLine();
+	if (strlen(filename) == 0)
+	{
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	}
+	if (ImGui::Button("Save")) {
+		auto res = dollyCam->SaveToFile(filename);
+		if (res) {
+			SetStatusTimeout(gameWrapper, "File saved");
+		}
+		else {
+			SetStatusTimeout(gameWrapper, "Failed to save file!");
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Load")) {
+		auto res = dollyCam->LoadFromFile(filename);
+		if (res) {
+			SetStatusTimeout(gameWrapper, "File loaded");
+		}
+		else {
+			SetStatusTimeout(gameWrapper, "Failed to load file");
+		}
+	}
+
+	if (strlen(filename) == 0)
+	{
+		ImGui::PopItemFlag();
+		ImGui::PopStyleVar();
+	}
+
+	ImGui::Text(saveloadStatus.c_str());
 }
 
 void DollyCamPlugin::DrawInterpolationSettings()
@@ -318,7 +538,6 @@ void DollyCamPlugin::DrawInterpolationSettings()
 	}
 	ImGui::PopItemWidth();
 }
-
 
 void DollyCamPlugin::SetStyle()
 {
@@ -414,36 +633,38 @@ void DollyCamPlugin::DrawTimeline()
 	if (!replayServer.IsNull())
 	{
 		auto replay = replayServer.GetReplay();
-		totalReplayTime = replay.GetNumFrames();
+		totalReplayTime = replay.GetNumFrames() / replayServer.GetReplayFPS();
 	}
 	else {
 	}
 	ImGui::BeginTimeline("Timeline", totalReplayTime);
 
-	static float currentFrame = 0;
-	static float seekFrame = 0.0f;
+	static float currentTime = 0;
+	static float seekTime = 0.0f;
 	auto frames = dollyCam->GetUsedFrames();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 237.0 / 255, 25.0 / 255, 0, 1 });
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 1.0, 72.0 / 255, 50.0 / 255, 1 });
 	ImGui::PushStyleColor(ImGuiCol_ColumnActive, ImVec4{ 1, 87.0 / 255, 67.0 / 255, 1 });
-	if (ImGui::TimelineMarker("currentFrame", currentFrame, "Current frame"))
+	if (ImGui::TimelineMarker("currentFrame", currentTime, "Time: "))
 	{
-		seekFrame = currentFrame;
+		seekTime = currentTime;
 	}
 	else {
 		if (!replayServer.IsNull())
 		{
 			auto replay = replayServer.GetReplay();
-			currentFrame = replay.GetCurrentFrame();
+			currentTime = replay.GetCurrentFrame() / replayServer.GetReplayFPS();
 		}
 	}
 	ImGui::PopStyleColor(3);
 	if (Columns::IsItemJustMadeInactive())
 	{
-		int _frame = seekFrame; //lambda can't capture static
-		gameWrapper->Execute([_frame, this](GameWrapper* gw) {
-			gw->GetGameEventAsReplay().SkipToFrame(_frame);
+		int _seekTime = seekTime; //lambda can't capture static
+		gameWrapper->Execute([_seekTime, this](GameWrapper* gw) {
+			auto replayServer = gameWrapper->GetGameEventAsReplay();
+			int frame = _seekTime * replayServer.GetReplayFPS();
+			replayServer.SkipToFrame(frame);
 			//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
 			});
 		//cvarManager->log("Seek to:" + to_string(seekFrame));
@@ -471,6 +692,28 @@ void DollyCamPlugin::DrawTimeline()
 	}
 	ImGui::EndTimeline();
 	ImGui::EndChild();
+}
+
+void DollyCamPlugin::ReadPlayerCameraSettings()
+{
+	gameWrapper->Execute([this](GameWrapper* gw) {
+		auto cam = gw->GetCamera();
+		if (!cam.IsNull())
+		{
+			guiState.cameraOverride.cameraSettings = cam.GetCameraSettings();
+		}
+		});
+}
+
+void DollyCamPlugin::OverridePlayerCameraSettings()
+{
+	gameWrapper->Execute([this](GameWrapper* gw) {
+		auto cam = gw->GetCamera();
+		if (!cam.IsNull())
+		{
+			cam.SetCameraSettings(guiState.cameraOverride.cameraSettings);
+		}
+		});
 }
 
 std::string DollyCamPlugin::GetMenuName()

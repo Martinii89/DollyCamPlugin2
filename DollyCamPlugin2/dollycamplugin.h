@@ -4,12 +4,49 @@
 #include "bakkesmod\plugin\pluginwindow.h"
 #include "dollycam.h"
 
+struct CameraOverride {
+	bool enabled = false;
+	ProfileCameraSettings cameraSettings;
+};
+
+struct SidebarSettings
+{
+	float width = 150;
+	float height = 1080;
+	int triggerWidth = 250;
+	float alpha = 0.0f;
+	float posOffset = width;
+
+	bool compact = true;
+	float LocationSpeed = 1.0;
+	float LocationPower = 1.0f;
+	float RotationSpeed = 10.0f;
+	float RotationPower = 1.0f;
+	float editTimeLimit = 50;
+	//int selectedFrame = -1; //for highlighting the selected snapshot ingame?
+};
+
+struct TabsSettings
+{
+	bool oldSnapshots = false;
+	bool cameraOverride = false;
+	bool sidebarSettings = false;
+};
+
+struct GuiState {
+	TabsSettings tabsSettings;
+	CameraOverride cameraOverride;
+	SidebarSettings sidebarSettings;
+	bool camLock = false;
+};
+
 class DollyCamPlugin : public BakkesMod::Plugin::BakkesModPlugin, public BakkesMod::Plugin::PluginWindow
 {
 private:
 	std::shared_ptr<DollyCam> dollyCam;
 	std::shared_ptr<bool> renderCameraPath;
 	CameraSnapshot selectedSnapshot;
+	GuiState guiState;
 	bool IsApplicable();
 
 	void CameraLock(ServerWrapper camInput, void* params, string funcName);
@@ -51,10 +88,14 @@ public:
 	//Interp config methods
 	void OnBezierCommand(vector<string> params);
 	virtual void Render();
+	void DrawSnapshotsNodes();
+	void DrawSaveLoadSettings();
 	void DrawInterpolationSettings();
 	void SetStyle();
 	void DrawSnapshots();
 	void DrawTimeline();
+	void ReadPlayerCameraSettings();
+	void OverridePlayerCameraSettings();
 	virtual std::string GetMenuName();
 	virtual std::string GetMenuTitle();
 	virtual void SetImGuiContext(uintptr_t ctx);

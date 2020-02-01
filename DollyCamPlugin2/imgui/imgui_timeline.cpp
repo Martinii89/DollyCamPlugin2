@@ -60,7 +60,7 @@ namespace ImGui {
 		InvisibleButton(str_id, ImVec2(2 * TIMELINE_RADIUS, 2 * TIMELINE_RADIUS));
 		if (IsItemActive() || IsItemHovered())
 		{
-			ImGui::SetTooltip("%s (%f)", label, time);
+			ImGui::SetTooltip("%s (%.0f)", label, time);
 			ImVec2 a(pos.x, GetTimelineStart().y);
 			ImVec2 b(pos.x, GetTimelineEnd().y);
 			win->DrawList->AddLine(a, b, line_color);

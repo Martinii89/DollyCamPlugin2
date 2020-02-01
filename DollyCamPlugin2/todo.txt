@@ -1,0 +1,24 @@
+else if (command.compare("dolly_path_move") == 0)
+    {
+        if (params.size() < 4) {
+            cvarManager->log("Usage: " + params.at(0) + " x y z");
+            return;
+        }
+        float x = get_safe_float(params.at(1));
+        float y = get_safe_float(params.at(2));
+        float z = get_safe_float(params.at(3));
+
+        auto path = dollyCam->GetCurrentPath();
+
+        for (auto& it : *path)
+        {
+            it.second.location.X += x;
+            it.second.location.Y += y;
+            it.second.location.Z += z;
+        }
+        dollyCam->RefreshInterpData();
+        dollyCam->RefreshInterpDataRotation();
+    }
+
+
+cvarManager->registerNotifier("dolly_path_move", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Moves the dollycam path by xyz amount", PERMISSION_ALL);

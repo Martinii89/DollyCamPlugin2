@@ -55,8 +55,8 @@ public:
 	void RefreshInterpDataRotation();
 	string GetInterpolationMethod(bool locationInterp);
 	shared_ptr<InterpStrategy> CreateInterpStrategy(int interpStrategy);
-	void SaveToFile(string filename);
-	void LoadFromFile(string filename);
+	bool SaveToFile(string filename);
+	bool LoadFromFile(string filename);
 	std::shared_ptr<savetype> GetCurrentPath();
 	void SetCurrentPath(std::shared_ptr<savetype> newPath);
 

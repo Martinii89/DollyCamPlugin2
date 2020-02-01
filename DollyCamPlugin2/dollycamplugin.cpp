@@ -13,8 +13,6 @@ using namespace std::placeholders;
 
 BAKKESMOD_PLUGIN(DollyCamPlugin, "Dollycam plugin", "2", PLUGINTYPE_REPLAY | PLUGINTYPE_SPECTATOR)
 
-
-
 bool DollyCamPlugin::IsApplicable()
 {
 	if (gameWrapper->IsInReplay() || gameWrapper->IsInGame())
@@ -40,7 +38,6 @@ void DollyCamPlugin::CameraLock(ServerWrapper camInput, void* params, string fun
 		// Lock mouse movement
 		pc.SetALookUp(0);
 		pc.SetATurn(0);
-
 	}
 }
 
@@ -78,6 +75,7 @@ void DollyCamPlugin::onLoad()
 
 	cvarManager->registerNotifier("dolly_path_save", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Saves the current dolly path to a file. Usage: dolly_path_save filename", PERMISSION_ALL);
 	cvarManager->registerNotifier("dolly_path_load", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Loads the current dolly path from a file. Usage: dolly_path_load filename", PERMISSION_ALL);
+	cvarManager->registerNotifier("dolly_path_move", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Moves the dollycam path by xyz amount", PERMISSION_ALL);
 
 	cvarManager->registerNotifier("dolly_cam_clone", bind(&DollyCamPlugin::OnCamCommand, this, _1), "Clones the current camera info into a snapshot", PERMISSION_REPLAY);
 	cvarManager->registerNotifier("dolly_cam_show", bind(&DollyCamPlugin::OnCamCommand, this, _1), "Prints the current camera info to the console", PERMISSION_REPLAY);
@@ -102,8 +100,12 @@ void DollyCamPlugin::onLoad()
 
 	cvarManager->registerNotifier("dolly_camsettings_set", bind(&DollyCamPlugin::OnSetCameraSettings, this, _1), "Change camera settings", PERMISSION_REPLAY);
 
-
 	dollyCam->SetRenderPath(true);
+
+	if (gameWrapper->IsInReplay())
+	{
+		gameWrapper->RegisterDrawable(bind(&DollyCamPlugin::onRender, this, _1));
+	}
 }
 
 void DollyCamPlugin::onUnload()
@@ -164,6 +166,27 @@ void DollyCamPlugin::OnAllCommand(vector<string> params)
 		}
 		string filename = params.at(1);
 		dollyCam->LoadFromFile(filename);
+	}
+	else if (command.compare("dolly_path_move") == 0)
+	{
+		if (params.size() < 4) {
+			cvarManager->log("Usage: " + params.at(0) + " x y z");
+			return;
+		}
+		float x = get_safe_float(params.at(1));
+		float y = get_safe_float(params.at(2));
+		float z = get_safe_float(params.at(3));
+
+		auto path = dollyCam->GetCurrentPath();
+
+		for (auto& it : *path)
+		{
+			it.second.location.X += x;
+			it.second.location.Y += y;
+			it.second.location.Z += z;
+		}
+		dollyCam->RefreshInterpData();
+		dollyCam->RefreshInterpDataRotation();
 	}
 }
 
@@ -412,9 +435,48 @@ void DollyCamPlugin::OnSnapshotModifyCommand(vector<string> params)
 	}
 }
 
-void DollyCamPlugin::OnSetCameraSettings(vector<string> params)
+float GetSafeFloatWithLimits(std::string in, float min, float max)
 {
-	// Redacted
+	float f = get_safe_float(in);
+	f = std::min(f, max);
+	f = std::max(f, min);
+	return f;
+}
+
+void DollyCamPlugin::OnSetCameraSettings(std::vector<std::string> params)
+{
+	if (params.size() == 1)
+	{
+		cvarManager->log("Usage: dolly_camsettings_set FOV Distance Height Pitch Stiffness SwivelSpeed TransitionSpeed");
+		cvarManager->log("Every param is optional. But the order matters. To set one setting, every previous param have to be specified");
+	}
+
+	CameraWrapper cam = gameWrapper->GetCamera();
+	auto prevSettings = cam.GetCameraSettings();
+
+	if (params.size() >= 2) {
+		prevSettings.FOV = GetSafeFloatWithLimits(params.at(1), 60, 110);
+	}
+	if (params.size() >= 3) {
+		prevSettings.Distance = GetSafeFloatWithLimits(params.at(2), 100, 400);
+	}
+	if (params.size() >= 4) {
+		prevSettings.Height = GetSafeFloatWithLimits(params.at(3), 40, 200);
+	}
+	if (params.size() >= 5) {
+		prevSettings.Pitch = GetSafeFloatWithLimits(params.at(4), -15, 0);
+	}
+	if (params.size() >= 6) {
+		prevSettings.Stiffness = GetSafeFloatWithLimits(params.at(5), 0, 1);
+	}
+	if (params.size() >= 7) {
+		prevSettings.SwivelSpeed = GetSafeFloatWithLimits(params.at(6), 1, 10);
+	}
+	if (params.size() >= 8) {
+		prevSettings.TransitionSpeed = GetSafeFloatWithLimits(params.at(7), 1, 2);
+	}
+
+	cam.SetCameraSettings(prevSettings);
 }
 
 void DollyCamPlugin::OnLiveCommand(vector<string> params)

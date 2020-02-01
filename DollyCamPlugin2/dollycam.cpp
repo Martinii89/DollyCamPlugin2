@@ -428,7 +428,7 @@ shared_ptr<InterpStrategy> DollyCam::CreateInterpStrategy(int interpStrategy)
 	return std::make_shared<LinearInterpStrategy>(LinearInterpStrategy(currentPath, chaikinDegree));
 }
 
-void DollyCam::SaveToFile(string filename)
+bool DollyCam::SaveToFile(string filename)
 {
 	string fullPath = "bakkesmod/data/campaths/" + filename;
 	std::map<string, CameraSnapshot> pathCopy;
@@ -439,17 +439,28 @@ void DollyCam::SaveToFile(string filename)
 	json j = pathCopy;
 	ofstream myfile;
 	myfile.open(fullPath);
-	myfile << j.dump(4);
+	if (myfile)
+	{
+		myfile << j.dump(4);
+	}
+	else {
+		return false;
+	}
 	myfile.close();
+	if (myfile.bad())
+	{
+		return false;
+	}
+	return true;
 }
 
-void DollyCam::LoadFromFile(string filename)
+bool DollyCam::LoadFromFile(string filename)
 {
 	string fullPath = "bakkesmod/data/campaths/" + filename;
 	if (!file_exists(fullPath))
 	{
 		cvarManager->log("File does not exist!");
-		return;
+		return false;
 	}
 	std::ifstream i(fullPath);
 	json j;
@@ -466,6 +477,7 @@ void DollyCam::LoadFromFile(string filename)
 
 	this->RefreshInterpData();
 	this->RefreshInterpDataRotation();
+	return true;
 }
 
 std::shared_ptr<savetype> DollyCam::GetCurrentPath()
