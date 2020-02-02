@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="imguifilebrowser\imfilebrowser.h" />
     <ClInclude Include="imgui\CustomImguiModifications.h" />
+    <ClInclude Include="imgui\IconsFontAwesome5.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imguivariouscontrols.h" />
@@ -193,6 +194,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="interpstrategies\tinyspline\tinyspline.i" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="changelog.txt" />
+    <Text Include="todo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

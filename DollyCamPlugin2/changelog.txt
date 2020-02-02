@@ -1,0 +1,49 @@
+Version 2.1 (Feb 2020)
+	SIDEBAR:
+		* Editable location\rotation\POV
+		* You can edit from the POV of the snapshot by clicking the "eye"
+			- Clicking the eye again returns your view to where you were before 
+		* Hold Alt to toggle the camere lock
+		* Hold shit on any slider to move it faster
+		* Ctrl-click any slider to input values manually 
+		* Buttons for:
+			- Rewind (rewinds a little bit before the first snapshot)
+			- Activate \ Deactivate (button changes based in current state)
+			- Take snapshot
+
+	Lots of settings related to the sidebar:
+		* Toggle for compact style
+		* Width and height
+		* The width where the sidebar transition starts
+		* Transition speed
+		* The sensitivity of the location\rotation sliders
+		* The update rate while editing
+			- Turning this lower gives a smoother editing experience at the expense of performance\fps lag (and possible crashes in some cases)
+
+	Some settings for toggling the visibility of:
+		* Old snapshot list tab
+		* Camera override tab (new)
+
+	Misc settings stuff:
+		* Dropdown menu for changing interpolation method
+		* Buttons for clearing\loading\saving the path
+
+	Timeline scrubbing:
+		* There is a experimental timeline in the old snapshot list (will be moved Soon™) 
+
+	Camera override tab (experimental):
+		* Lets you override the camera settings of a player while in player cam
+
+	Settings can be saved. And will be automatically loaded on plugin load
+
+	Rendered path changes:
+		* Frame numbers are removed
+		* White ticks\boxes are rendered at each frame
+		* A visual camera is rendered at each frame during playback, so you can visually see where the camera would be pointing. 
+			- cvar: (dolly_render_visualcam )
+
+	Animation reset:
+		* When the dolly is activated and hits the first frame of the path. We attempt to reset the animation of certain assets around the map
+
+
+

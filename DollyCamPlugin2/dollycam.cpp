@@ -303,7 +303,7 @@ void DollyCam::Render(CanvasWrapper cw)
 	for (auto it = (++currentRenderPath->begin()); it != currentRenderPath->end(); ++it)
 	{
 		Vector2 line = cw.Project(it->second.location);
-		if (it->first == currentFrame && cvarManager->getCvar("dolly_render_visualcam").getBoolValue())
+		if (!IsActive() && it->first == currentFrame && cvarManager->getCvar("dolly_render_visualcam").getBoolValue())
 		{
 			visualCamera.DrawCamera(cw, it->second.location, it->second.rotation.ToRotator(), 2.0f);
 		}

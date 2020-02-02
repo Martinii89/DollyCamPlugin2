@@ -131,6 +131,9 @@
     <ClInclude Include="VisualCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="imgui\IconsFontAwesome5.h">
+      <Filter>imgui\headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dollycamplugin.cpp">
@@ -207,5 +210,9 @@
     <None Include="interpstrategies\tinyspline\tinyspline.i">
       <Filter>InterpolationStrategies\Spline\TinySpline</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="todo.txt" />
+    <Text Include="changelog.txt" />
   </ItemGroup>
 </Project>

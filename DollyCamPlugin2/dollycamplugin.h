@@ -3,6 +3,7 @@
 #include "bakkesmod\plugin\bakkesmodplugin.h"
 #include "bakkesmod\plugin\pluginwindow.h"
 #include "dollycam.h"
+#include "imgui/imgui.h"
 
 struct CameraOverride {
 	bool enabled = false;
@@ -13,7 +14,8 @@ struct SidebarSettings
 {
 	float width = 150;
 	float height = 1080;
-	int triggerWidth = 250;
+	float triggerWidth = 250;
+	float transitionSpeed = 1.0;
 	float alpha = 0.0f;
 	float posOffset = width;
 
@@ -24,13 +26,13 @@ struct SidebarSettings
 	float RotationPower = 1.0f;
 	float editTimeLimit = 50;
 	//int selectedFrame = -1; //for highlighting the selected snapshot ingame?
+	POV originalView;
 };
 
 struct TabsSettings
 {
 	bool oldSnapshots = false;
 	bool cameraOverride = false;
-	bool sidebarSettings = false;
 };
 
 struct GuiState {
@@ -38,6 +40,7 @@ struct GuiState {
 	CameraOverride cameraOverride;
 	SidebarSettings sidebarSettings;
 	bool camLock = false;
+	bool showSettings = false;
 };
 
 class DollyCamPlugin : public BakkesMod::Plugin::BakkesModPlugin, public BakkesMod::Plugin::PluginWindow
@@ -45,6 +48,7 @@ class DollyCamPlugin : public BakkesMod::Plugin::BakkesModPlugin, public BakkesM
 private:
 	std::shared_ptr<DollyCam> dollyCam;
 	std::shared_ptr<bool> renderCameraPath;
+	ImFont* fa;
 	CameraSnapshot selectedSnapshot;
 	GuiState guiState;
 	bool IsApplicable();
@@ -62,6 +66,9 @@ public:
 
 	//Info/debug methods
 	void PrintSnapshotInfo(CameraSnapshot shot);
+
+	void SaveSettings();
+	void LoadSettings();
 
 	//Engine hooks
 	void onReplayOpen(std::string funcName);
@@ -88,6 +95,8 @@ public:
 	//Interp config methods
 	void OnBezierCommand(vector<string> params);
 	virtual void Render();
+	void DrawSettingsWindow();
+	void SidebarTransition(float actualWidth);
 	void DrawSnapshotsNodes();
 	void DrawSaveLoadSettings();
 	void DrawInterpolationSettings();

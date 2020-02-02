@@ -3,6 +3,7 @@
 #include "bakkesmod\wrappers\replayserverwrapper.h"
 #include "bakkesmod\wrappers\GameObject\camerawrapper.h"
 
+#include "utils/io.h"
 #include "utils\parser.h"
 #include "serialization.h"
 
@@ -49,7 +50,7 @@ void DollyCamPlugin::onLoad()
 
 	std::shared_ptr<IGameApplier> gameApplier = std::make_shared<RealGameApplier>(RealGameApplier(gameWrapper));
 	dollyCam = std::make_shared<DollyCam>(DollyCam(gameWrapper, cvarManager, gameApplier));
-	renderCameraPath = std::make_shared<bool>(true);;
+	renderCameraPath = std::make_shared<bool>(true);
 
 	gameWrapper->HookEvent("Function TAGame.CameraState_Replay_TA.UpdatePOV", bind(&DollyCamPlugin::onTick, this, _1));
 	gameWrapper->HookEvent("Function TAGame.GameInfo_Replay_TA.InitGame", bind(&DollyCamPlugin::onReplayOpen, this, _1));
@@ -106,6 +107,7 @@ void DollyCamPlugin::onLoad()
 	{
 		gameWrapper->RegisterDrawable(bind(&DollyCamPlugin::onRender, this, _1));
 	}
+	LoadSettings();
 }
 
 void DollyCamPlugin::onUnload()
@@ -119,6 +121,31 @@ void DollyCamPlugin::PrintSnapshotInfo(CameraSnapshot shot)
 	cvarManager->log("FOV: " + to_string_with_precision(shot.FOV, 5));
 	cvarManager->log("Location " + vector_to_string(shot.location));
 	cvarManager->log("Rotation " + rotator_to_string(shot.rotation.ToRotator()));
+}
+
+void DollyCamPlugin::SaveSettings()
+{
+	string fullPath = "bakkesmod/data/dollycam/settings.json";
+	json j = guiState;
+	ofstream myfile;
+	myfile.open(fullPath);
+	if (myfile)
+	{
+		myfile << j.dump(4);
+	}
+	myfile.close();
+}
+
+void DollyCamPlugin::LoadSettings()
+{
+	string fullPath = "bakkesmod/data/dollycam/settings.json";
+	if (!file_exists(fullPath)) {
+		return;
+	}
+	std::ifstream i(fullPath);
+	json j;
+	i >> j;
+	guiState = j.get<GuiState>();
 }
 
 void DollyCamPlugin::onReplayOpen(std::string funcName)
@@ -520,6 +547,18 @@ void DollyCamPlugin::onRender(CanvasWrapper canvas)
 {
 	if (/*!IsApplicable() ||*/ !*renderCameraPath)
 		return;
+	static bool once = true;
+	if (once)
+	{
+		once = false;
+		auto size = canvas.GetSize();
+		if (guiState.sidebarSettings.height > size.Y)
+		{
+			guiState.sidebarSettings.height = size.Y;
+		}
+	}
+
+	//cvarManager->log(std::to_string(canvas.GetSize().Y));
 	dollyCam->Render(canvas);
 }
 

@@ -12,7 +12,6 @@ std::string rotator_to_string(Rotator r)
 	return to_string_with_precision(r.Pitch, 2) + ", " + to_string_with_precision(r.Yaw, 2) + ", " + to_string_with_precision(r.Roll, 2);
 }
 
-
 void to_json(json& j, const Vector& p) {
 	j = json{ { "x", p.X },{ "y", p.Y },{ "z", p.Z } };
 }
@@ -55,4 +54,47 @@ void from_json(const json& j, CameraSnapshot& p) {
 	p.location = j.at("location").get<Vector>();
 	p.rotation = (j.at("rotation").get<CustomRotator>());
 	p.weight = j.at("weight").get<float>();
+}
+
+void to_json(json& j, const SidebarSettings& p)
+{
+	j = json{ {"compact", p.compact}, {"editTimeLimit", p.editTimeLimit}, {"height", p.height}, {"LocationPower", p.LocationPower},
+	{"LocationSpeed", p.LocationSpeed}, {"RotationPower", p.RotationPower}, {"RotationSpeed", p.RotationSpeed},
+	{"transitionSpeed", p.transitionSpeed}, {"triggerWidth", p.triggerWidth}, {"width", p.width} };
+}
+
+void to_json(json& j, const TabsSettings& p)
+{
+	j = json{ {"cameraOverride", p.cameraOverride}, {"oldSnapshots", p.oldSnapshots} };
+}
+
+void to_json(json& j, const GuiState& p)
+{
+	j = json{ {"sidebarSettings", p.sidebarSettings}, {"tabsSettings", p.tabsSettings} };
+}
+
+void from_json(const json& j, SidebarSettings& p)
+{
+	j.at("compact").get_to(p.compact);
+	j.at("editTimeLimit").get_to(p.editTimeLimit);
+	j.at("height").get_to(p.height);
+	j.at("LocationPower").get_to(p.LocationPower);
+	j.at("LocationSpeed").get_to(p.LocationSpeed);
+	j.at("RotationPower").get_to(p.RotationPower);
+	j.at("RotationSpeed").get_to(p.RotationSpeed);
+	j.at("transitionSpeed").get_to(p.transitionSpeed);
+	j.at("triggerWidth").get_to(p.triggerWidth);
+	j.at("width").get_to(p.width);
+};
+
+void from_json(const json& j, TabsSettings& p)
+{
+	j.at("cameraOverride").get_to(p.cameraOverride);
+	j.at("oldSnapshots").get_to(p.oldSnapshots);
+}
+
+void from_json(const json& j, GuiState& p)
+{
+	j.at("sidebarSettings").get_to(p.sidebarSettings);
+	j.at("tabsSettings").get_to(p.tabsSettings);
 }

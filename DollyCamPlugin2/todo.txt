@@ -1,24 +1,10 @@
-else if (command.compare("dolly_path_move") == 0)
-    {
-        if (params.size() < 4) {
-            cvarManager->log("Usage: " + params.at(0) + " x y z");
-            return;
-        }
-        float x = get_safe_float(params.at(1));
-        float y = get_safe_float(params.at(2));
-        float z = get_safe_float(params.at(3));
-
-        auto path = dollyCam->GetCurrentPath();
-
-        for (auto& it : *path)
-        {
-            it.second.location.X += x;
-            it.second.location.Y += y;
-            it.second.location.Z += z;
-        }
-        dollyCam->RefreshInterpData();
-        dollyCam->RefreshInterpDataRotation();
-    }
-
-
-cvarManager->registerNotifier("dolly_path_move", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Moves the dollycam path by xyz amount", PERMISSION_ALL);
+* Highlight selected\edited snapshot with a different color in the canvas
+* Put the timeline editor at the top\bottom kinda like the sidebar?
+* File listing for path loading
+* Some visual indicator for when the camera is locked? ("CAMERA LOCKED")
+* Automatically store the current path in json. So paths won't be lost at crash. 
+* Path frame translate  (experimental)
+* Hotkey assignement tab (not high priority - might require some sdk additions)
+* Sidebar transition toggle by key instead of mouse?
+* 3D gizmo editor (not high priority - cinder?)
+* Graph editor (https://blenderartists.org/uploads/default/original/4X/3/7/a/37a98fe07c55038cd7daea9ba42e89feeafc6378.png) (not high priority)
