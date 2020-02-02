@@ -108,6 +108,7 @@ void DollyCamPlugin::onLoad()
 		gameWrapper->RegisterDrawable(bind(&DollyCamPlugin::onRender, this, _1));
 	}
 	LoadSettings();
+	dollyCam->LoadFromFile("_temp.json");
 }
 
 void DollyCamPlugin::onUnload()

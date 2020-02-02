@@ -16,10 +16,11 @@ struct SidebarSettings
 	float height = 1080;
 	float triggerWidth = 250;
 	float transitionSpeed = 1.0;
+	bool mouseTransition = true;
 	float alpha = 0.0f;
 	float posOffset = width;
 
-	bool compact = true;
+	bool compact = false;
 	float LocationSpeed = 1.0;
 	float LocationPower = 1.0f;
 	float RotationSpeed = 10.0f;

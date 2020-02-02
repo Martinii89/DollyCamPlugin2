@@ -83,6 +83,7 @@ void from_json(const json& j, SidebarSettings& p)
 	j.at("RotationPower").get_to(p.RotationPower);
 	j.at("RotationSpeed").get_to(p.RotationSpeed);
 	j.at("transitionSpeed").get_to(p.transitionSpeed);
+	j.at("mouseTransition").get_to(p.mouseTransition);
 	j.at("triggerWidth").get_to(p.triggerWidth);
 	j.at("width").get_to(p.width);
 };

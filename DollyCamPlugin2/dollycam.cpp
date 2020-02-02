@@ -189,6 +189,7 @@ void DollyCam::InsertSnapshot(CameraSnapshot snapshot)
 	this->currentPath->insert_or_assign(snapshot.frame, snapshot);
 	this->RefreshInterpData();
 	this->RefreshInterpDataRotation();
+	SaveToFile("_temp.json");
 }
 
 bool DollyCam::IsFrameUsed(int frame)

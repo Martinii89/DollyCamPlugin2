@@ -618,6 +618,7 @@ void DollyCamPlugin::DrawSettingsWindow()
 			ImGui::Text("Window parameters");
 			ImGui::SliderFloat("Width", &sidebarSettings.width, 100, 500, "%.0f");
 			ImGui::SliderFloat("Height", &sidebarSettings.height, 100, 1080, "%.0f");
+			ImGui::Checkbox("Mouse trigger", &sidebarSettings.mouseTransition);
 			ImGui::SliderFloat("Trigger Width", &sidebarSettings.triggerWidth, 100, 500, "%.0f");
 			ImGui::SliderFloat("Transition Speed", &sidebarSettings.transitionSpeed, 0.1, 3, "%.1f");
 
@@ -701,6 +702,11 @@ void DollyCamPlugin::DrawSettingsWindow()
 void DollyCamPlugin::SidebarTransition(float actualWidth)
 {
 	auto& sidebarSetting = guiState.sidebarSettings;
+	if (!sidebarSetting.mouseTransition) {
+		sidebarSetting.posOffset = 0;
+		sidebarSetting.alpha = 1;
+		return;
+	}
 	auto mPosX = ImGui::GetMousePos().x;
 	float speed = sidebarSetting.transitionSpeed;
 	//Hide sidebar

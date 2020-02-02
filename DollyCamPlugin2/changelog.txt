@@ -15,6 +15,7 @@ Version 2.1 (Feb 2020)
 		* Toggle for compact style
 		* Width and height
 		* The width where the sidebar transition starts
+		* Toggle for if mouse should trigger transition or not.
 		* Transition speed
 		* The sensitivity of the location\rotation sliders
 		* The update rate while editing
@@ -35,6 +36,7 @@ Version 2.1 (Feb 2020)
 		* Lets you override the camera settings of a player while in player cam
 
 	Settings can be saved. And will be automatically loaded on plugin load
+	Automatically stores the current path to _temp.json. This is automatically loaded on plugin load. So paths won't be lost at crash. 
 
 	Rendered path changes:
 		* Frame numbers are removed
