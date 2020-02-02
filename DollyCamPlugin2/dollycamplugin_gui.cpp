@@ -7,8 +7,11 @@
 #include "bakkesmod\..\\utils\parser.h"
 #include <functional>
 #include <vector>
+#include <set>
+#include <Shlwapi.h>
 #include "bakkesmod/wrappers/GuiManagerWrapper.h"
 #include "imgui/IconsFontAwesome5.h"
+#pragma comment(lib, "Shlwapi.lib")
 
 static int view_index = -1;
 
@@ -87,6 +90,97 @@ void BeginAltBg(int i)
 void EndAltBg(int i)
 {
 	ImGui::PopStyleColor(2);
+}
+
+static const std::vector<std::string> LegalHotkeys{ "F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","Escape","Tab","Tilde","ScrollLock","Pause","one","two","three","four","five","six","seven","eight","nine","zero","Underscore","Equals","Backslash","LeftBracket","RightBracket","Enter","CapsLock","Semicolon","Quote","LeftShift","Comma","Period","Slash","RightShift","LeftControl","LeftAlt","SpaceBar","RightAlt","RightControl","Left","Up","Down","Right","Home","End","Insert","PageUp","Delete","PageDown","NumLock","Divide","Multiply","Subtract","Add","PageDown","NumPadOne","NumPadTwo","NumPadThree","NumPadFour","NumPadFive","NumPadSix","NumPadSeven","NumPadEight","NumPadNine","NumPadZero","Decimal","LeftMouseButton","RightMouseButton","ThumbMouseButton","ThumbMouseButton2","MouseScrollUp","MouseScrollDown","MouseX","MouseY","XboxTypeS_LeftThumbStick","XboxTypeS_RightThumbStick","XboxTypeS_DPad_Up","XboxTypeS_DPad_Left","XboxTypeS_DPad_Right","XboxTypeS_DPad_Down","XboxTypeS_Back","XboxTypeS_Start","XboxTypeS_Y","XboxTypeS_X","XboxTypeS_B","XboxTypeS_A","XboxTypeS_LeftShoulder","XboxTypeS_RightShoulder","XboxTypeS_LeftTrigger","XboxTypeS_RightTrigger","XboxTypeS_LeftTriggerAxis","XboxTypeS_RightTriggerAxis","XboxTypeS_LeftX","XboxTypeS_LeftY","XboxTypeS_RightX","XboxTypeS_RightY" };
+
+bool DrawHotkeySelection(const char* label, const char** selected, std::set<std::string> boundKeys)
+{
+	bool retValue = false;
+	static char filter[256];
+	static bool focus = true;
+	auto& style = ImGui::GetStyle();
+	//auto oldAlpha = style.Alpha;
+	//style.Alpha = 1.0;
+	//ImGui::Text(std::to_string(style.Alpha).c_str());
+	auto popupbg = ImGui::GetStyleColorVec4(ImGuiCol_PopupBg);
+	popupbg.w = 1.0;
+	ImGui::PushStyleColor(ImGuiCol_PopupBg, popupbg);
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1);
+	if (ImGui::BeginCombo(label, *selected))
+	{
+		if (focus) {
+			focus = false;
+			ImGui::SetKeyboardFocusHere(1);
+		}
+		std::string lbl = "##keyfilter" + std::string(label);
+		ImGui::InputText(lbl.c_str(), filter, IM_ARRAYSIZE(filter));
+		for (size_t i = 0; i < LegalHotkeys.size(); i++)
+		{
+			if (strlen(filter) > 0 && StrStrIA(LegalHotkeys[i].c_str(), filter) == nullptr) continue;
+			bool this_selected = !strcmp(*selected, LegalHotkeys[i].c_str());
+			bool already_Bound = (boundKeys.find(LegalHotkeys[i]) != boundKeys.end());
+			if (already_Bound)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0, 1));
+				ImGui::Text((LegalHotkeys[i] + " (already bound)").c_str());
+				ImGui::PopStyleColor();
+			}
+			else {
+				if (ImGui::Selectable(LegalHotkeys[i].c_str(), this_selected))
+				{
+					*selected = LegalHotkeys[i].c_str();
+					retValue = true;
+				}
+			}
+		}
+		ImGui::EndCombo();
+	}
+	if (IsItemJustMadeInactive())
+	{
+		focus = true;
+		memset(filter, 0, sizeof filter);
+	}
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar();
+
+	return retValue;
+}
+
+std::map<std::string, std::string> GetAllBindings(std::shared_ptr<CVarManagerWrapper> cvarManager)
+{
+	auto bindings = std::map<std::string, std::string>();
+	for (auto& hotkey : LegalHotkeys)
+	{
+		auto bind = cvarManager->getBindStringForKey(hotkey);
+		if (!bind.empty())
+		{
+			bindings.emplace(bind, hotkey);
+		}
+	}
+	return bindings;
+}
+
+std::set<std::string> GetBoundKeysFromBindings(std::map<std::string, std::string> bindings)
+{
+	std::set<std::string> ret;
+	for (auto& bind : bindings)
+	{
+		ret.emplace(bind.second);
+	}
+	return ret;
+}
+
+void Rebind(std::shared_ptr<CVarManagerWrapper> cvarManager, std::string command, std::string oldKey, std::string newHotkey)
+{
+	//Unbind old
+	if (!oldKey.empty()) {
+		cvarManager->executeCommand("unbind " + oldKey);
+	}
+	if (!newHotkey.empty())
+	{
+		cvarManager->setBind(newHotkey, command);
+	}
 }
 
 static void ShowHelpMarker(const char* desc)
@@ -639,6 +733,33 @@ void DollyCamPlugin::DrawSettingsWindow()
 		{
 			ImGui::Checkbox("Show old snapshot tab", &tabSettings.oldSnapshots);
 			ImGui::Checkbox("Show Camera override tab", &tabSettings.cameraOverride);
+		}
+
+		if (ImGui::CollapsingHeader("Hotkeys"))
+		{
+			//ImGui::Text("NOT FUNCTIONAL");
+			static auto allBindings = GetAllBindings(cvarManager);
+			static std::set<std::string> boundKeys = GetBoundKeysFromBindings(allBindings);
+			for (auto& binding : allBindings) {
+				auto command = binding.first;
+				auto key = binding.second;
+				auto newKey = key.c_str();
+				if (DrawHotkeySelection(command.c_str(), &newKey, boundKeys))
+				{
+					Rebind(cvarManager, command, key, newKey);
+					boundKeys.erase(key);
+					boundKeys.emplace(newKey);
+					allBindings[command] = newKey;
+				}
+			}
+			//static auto test = "test";
+			//DrawHotkeySelection("hotkeys", &test);
+			//auto take_snapshot_key = cvarManager->GetKeyForBindingString("dolly_snapshot_take"); // <- not in sdk
+			//// Draw combo box with take_snapshot_key as default
+			//if (/*combo box selection changed*/) {
+			//	cvarManager->removeBind("dolly_snapshot_take");   // <- not in sdk
+			//	cvarManager->setBind("new key", "dolly_snapshot_take");
+			// }
 		}
 
 		ImGui::EndChild();
