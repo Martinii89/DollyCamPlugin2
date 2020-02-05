@@ -36,6 +36,14 @@ SplineInterpStrategy::SplineInterpStrategy(std::shared_ptr<savetype> _camPath, i
 {
 	setCamPath(_camPath, degree);
 	backupStrategy = std::make_shared<NBezierInterpStrategy>(NBezierInterpStrategy(_camPath, degree));
+	int n = camPath->size();
+	if (n >= 4)
+	{
+		InitPositions(n);
+		InitRotations(n);
+		InitFOVs(n);
+	}
+
 }
 
 NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
@@ -55,9 +63,9 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 		return{ Vector(0), CustomRotator(0,0,0), 0 };
 
 	//Could this be done in the constructor?
-	InitPositions(n);
-	InitRotations(n);
-	InitFOVs(n);
+	//InitPositions(n);
+	//InitRotations(n);
+	//InitFOVs(n);
 	int accuracy = cvarManager->getCvar("dolly_spline_acc").getIntValue();
 	float epsilon = 1.0 / accuracy; // Acceptable error is 1 / 1000 seconds.
 	auto posRes = camPositions.bisect(gameTime, epsilon).result();
