@@ -60,7 +60,7 @@ void to_json(json& j, const SidebarSettings& p)
 {
 	j = json{ {"compact", p.compact}, {"editTimeLimit", p.editTimeLimit}, {"height", p.height}, {"LocationPower", p.LocationPower},
 	{"LocationSpeed", p.LocationSpeed}, {"RotationPower", p.RotationPower}, {"RotationSpeed", p.RotationSpeed},
-	{"transitionSpeed", p.transitionSpeed}, {"triggerWidth", p.triggerWidth}, {"width", p.width} };
+	{"transitionSpeed", p.transitionSpeed},{"mouseTransition", p.mouseTransition}, {"triggerWidth", p.triggerWidth}, {"width", p.width} };
 }
 
 void to_json(json& j, const TabsSettings& p)

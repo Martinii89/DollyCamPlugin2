@@ -77,7 +77,7 @@
     <IntDir>$(SolutionDir)build\.intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)plugins\</OutDir>
     <IntDir>$(SolutionDir)build\.intermediates\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -118,7 +118,7 @@
       <AdditionalLibraryDirectories>libs;$(BAKKESMOD)\bakkesmodsdk\lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>C:\Users\m4rti\Miniconda3\python.exe "$(BAKKESMOD)\bakkesmodsdk\bakkes_patchplugin.py" "$(TargetPath)"</Command>
+      <Command>python  "$(BAKKESMOD)\bakkesmodsdk\bakkes_patchplugin.py" "$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

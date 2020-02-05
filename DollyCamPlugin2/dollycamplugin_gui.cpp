@@ -738,10 +738,17 @@ void DollyCamPlugin::DrawSettingsWindow()
 		if (ImGui::CollapsingHeader("Hotkeys"))
 		{
 			//ImGui::Text("NOT FUNCTIONAL");
+			static bool filter_dolly = true;
+			ImGui::Checkbox("Dolly filter", &filter_dolly);
 			static auto allBindings = GetAllBindings(cvarManager);
 			static std::set<std::string> boundKeys = GetBoundKeysFromBindings(allBindings);
+
 			for (auto& binding : allBindings) {
 				auto command = binding.first;
+				if (filter_dolly && command.find("dolly") == std::string::npos){
+					continue;
+
+				}
 				auto key = binding.second;
 				auto newKey = key.c_str();
 				if (DrawHotkeySelection(command.c_str(), &newKey, boundKeys))
@@ -822,6 +829,8 @@ void DollyCamPlugin::DrawSettingsWindow()
 
 void DollyCamPlugin::SidebarTransition(float actualWidth)
 {
+	actualWidth -= 15;
+	float minAlpha = 0.5;
 	auto& sidebarSetting = guiState.sidebarSettings;
 	if (!sidebarSetting.mouseTransition) {
 		sidebarSetting.posOffset = 0;
@@ -832,9 +841,9 @@ void DollyCamPlugin::SidebarTransition(float actualWidth)
 	float speed = sidebarSetting.transitionSpeed;
 	//Hide sidebar
 	if (mPosX > sidebarSetting.triggerWidth && !ImGui::IsMouseDragging()) {
-		if (sidebarSetting.alpha > 0) {
+		if (sidebarSetting.alpha > minAlpha) {
 			sidebarSetting.alpha -= 0.02 * speed;
-			sidebarSetting.alpha = std::max(0.0f, sidebarSetting.alpha);
+			sidebarSetting.alpha = std::max(minAlpha, sidebarSetting.alpha);
 		}
 		if (sidebarSetting.posOffset < actualWidth)
 			sidebarSetting.posOffset += 3 * speed;
@@ -925,7 +934,7 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 			static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
 
 			bool doUpdateFrame = false;
-			static int updateLimit = guiState.sidebarSettings.editTimeLimit;
+			int updateLimit = guiState.sidebarSettings.editTimeLimit;
 			auto lspeed = sidebarSettings.LocationSpeed;
 			auto lpower = sidebarSettings.LocationSpeed;
 			auto rSpeed = sidebarSettings.RotationSpeed;
