@@ -1,7 +1,8 @@
 #include <map>
 #include "splineinterp.h"
 #include "nbezierinterp.h"
-//#include "bakkesmod\wrappers\wrapperstructs.h"
+#include "../RenderingTools.h"
+#include "bakkesmod/wrappers/wrapperstructs.h"
 
 vector<tinyspline::real> SolveForT(tinyspline::BSpline &spline, float tGoal, float e, int maxSteps = 50)
 {
@@ -42,6 +43,7 @@ SplineInterpStrategy::SplineInterpStrategy(std::shared_ptr<savetype> _camPath, i
 		InitPositions(n);
 		InitRotations(n);
 		InitFOVs(n);
+		InitSlerp(n);
 	}
 
 }
@@ -59,6 +61,7 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	}
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
+	auto percent = (gameTime - nextSnapshot->second.timeStamp) / (nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp);
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame || t > 1) //We're at the end of the playback
 		return{ Vector(0), CustomRotator(0,0,0), 0 };
 
@@ -72,6 +75,12 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	auto rotRes = camRotations.bisect(gameTime, epsilon).result();
 	auto fovRes = camFOVs.bisect(gameTime, epsilon).result();
 
+	auto q1 = slerpQuats[currentSnapshot->second.frame];
+	auto q2 = slerpQuats[nextSnapshot->second.frame];
+	auto qSlerp = RenderingTools::Slerp(q1, q2, percent);
+	auto newRotator = RenderingTools::QuatToRotator(qSlerp);
+	auto newCustomRotator = CustomRotator(newRotator.Pitch, newRotator.Yaw, newRotator.Roll);
+
 
 	Vector v;
 	v.X = float(posRes[1]);
@@ -81,7 +90,7 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	float fov = float(fovRes[1]);
 
 	CustomRotator rot = CustomRotator(float(rotRes[1]), float(rotRes[2]), float(rotRes[3]));
-	return {v, rot, fov};
+	return {v, newCustomRotator, fov};
 }
 
 std::string SplineInterpStrategy::GetName()
@@ -174,4 +183,16 @@ void SplineInterpStrategy::InitPositions(int numberOfPoints)
 		positions.push_back(double(point.location.Z));
 	}
 	camPositions = tinyspline::Utils::interpolateCubic(&positions, 4);
+}
+
+void SplineInterpStrategy::InitSlerp(int numberOfPoints)
+{
+	auto rotations = std::map<int, Quat>();
+	for (auto& item : *camPath)
+	{
+		Rotator rot = item.second.rotation.ToRotator();
+		Quat q = RenderingTools::RotatorToQuat(rot);
+		rotations.emplace(item.second.frame, q);
+	}
+	slerpQuats = rotations;
 }

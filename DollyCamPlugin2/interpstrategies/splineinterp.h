@@ -17,13 +17,17 @@ private:
 
 	float GetRelativeTimeFromFrame(int frame);
 
+
 	void InitFOVs(int numberOfPoints);
 	void InitRotations(int numberOfPoints);
 	void InitPositions(int numberOfPoints);
+	void InitSlerp(int numberOfPoints);
 
 	tinyspline::BSpline camPositions;
 	tinyspline::BSpline camRotations;
 	tinyspline::BSpline camFOVs;
+
+	std::map<int, Quat> slerpQuats;
 
 	std::shared_ptr<InterpStrategy> backupStrategy;
 };
