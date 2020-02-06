@@ -134,6 +134,9 @@
     <ClInclude Include="imgui\IconsFontAwesome5.h">
       <Filter>imgui\headers</Filter>
     </ClInclude>
+    <ClInclude Include="RenderingTools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dollycamplugin.cpp">
@@ -203,6 +206,9 @@
       <Filter>InterpolationStrategies\Spline\TinySpline</Filter>
     </ClCompile>
     <ClCompile Include="VisualCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderingTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

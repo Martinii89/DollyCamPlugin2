@@ -97,7 +97,7 @@ public:
 	void OnBezierCommand(vector<string> params);
 	virtual void Render();
 	void DrawSettingsWindow();
-	void SidebarTransition(float actualWidth);
+	bool SidebarTransition(float actualWidth);
 	void DrawSnapshotsNodes();
 	void DrawSaveLoadSettings();
 	void DrawInterpolationSettings();

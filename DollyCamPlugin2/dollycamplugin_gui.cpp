@@ -628,43 +628,47 @@ void DollyCamPlugin::Render()
 	// Make style consistent with BM
 	SetStyle();
 	//int totalWidth = std::accumulate(columns.begin(), columns.end(), 0, [](int sum, const Columns::TableColumns& element) {return sum + element.GetWidth(); });
-	if (guiState.showSettings) {
-		DrawSettingsWindow();
-	}
 
 	auto& sidebarSetting = guiState.sidebarSettings;
 	float actualWidth = sidebarSetting.width + (sidebarSetting.compact ? 0.0f : 50.0f);
-	SidebarTransition(actualWidth);
+	/*SidebarTransition(actualWidth);*/
 
 	ImGui::SetNextWindowPos({ 0 - (sidebarSetting.posOffset), 0 }, ImGuiCond_Always);
 	ImGui::SetNextWindowSize({ actualWidth, sidebarSetting.height }, ImGuiCond_Always);
-
 	if (ImGui::Begin("##sidebar", &isWindowOpen, { 0, 0 }, sidebarSetting.alpha, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar)) {
-		DrawSnapshotsNodes();
-		if (ImGui::Button(ICON_FA_BACKWARD))
+		if (SidebarTransition(actualWidth))
 		{
-			gameWrapper->Execute([this](GameWrapper* gw) {
-				auto firstFrame = std::max(0, dollyCam->GetUsedFrames().front() - 30); //add some padding
-				auto replayServer = gw->GetGameEventAsReplay();
-				replayServer.SkipToFrame(firstFrame);
-				//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
-				});
-		}ImGui::SameLine();
-		if (!dollyCam->IsActive() && ImGui::Button("Activate")) {
-			dollyCam->Activate();
-		}
-		if (dollyCam->IsActive() && ImGui::Button("Deactivate")) {
-			dollyCam->Deactivate();
-		}ImGui::SameLine();
+			DrawSnapshotsNodes();
+			if (ImGui::Button(ICON_FA_BACKWARD))
+			{
+				gameWrapper->Execute([this](GameWrapper* gw) {
+					auto firstFrame = std::max(0, dollyCam->GetUsedFrames().front() - 30); //add some padding
+					auto replayServer = gw->GetGameEventAsReplay();
+					replayServer.SkipToFrame(firstFrame);
+					//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
+					});
+			}ImGui::SameLine();
+			if (!dollyCam->IsActive() && ImGui::Button("Activate")) {
+				dollyCam->Activate();
+			}
+			if (dollyCam->IsActive() && ImGui::Button("Deactivate")) {
+				dollyCam->Deactivate();
+			}ImGui::SameLine();
 
-		if (ImGui::Button(ICON_FA_CAMERA)) {
-			gameWrapper->Execute([this](GameWrapper*) {dollyCam->TakeSnapshot(true); });
+			if (ImGui::Button(ICON_FA_CAMERA)) {
+				gameWrapper->Execute([this](GameWrapper*) {dollyCam->TakeSnapshot(true); });
+			}
 		}
 		ImGui::End();
+
 	}
 
 	//bool show_styles = true;
 	//ImGui::Begin("Style Editor", &show_styles); ImGui::ShowStyleEditor(); ImGui::End();
+
+	if (guiState.showSettings) {
+		DrawSettingsWindow();
+	}
 
 	if (!isWindowOpen)
 	{
@@ -680,7 +684,7 @@ void DollyCamPlugin::DrawSettingsWindow()
 {
 	string menuName = "Settings";
 	ImGui::SetNextWindowPos({ 600,0 }, ImGuiCond_Once);
-	ImGui::SetNextWindowSize({ 600,200 }, ImGuiCond_Once);
+	ImGui::SetNextWindowSize({ 600,500 }, ImGuiCond_Once);
 	if (!ImGui::Begin(menuName.c_str(), &guiState.showSettings, ImGuiWindowFlags_ResizeFromAnySide))
 	{
 		// Early out if the window is collapsed, as an optimization.
@@ -710,6 +714,7 @@ void DollyCamPlugin::DrawSettingsWindow()
 
 			ImGui::Checkbox("Compact", &sidebarSettings.compact);
 			ImGui::Text("Window parameters");
+			ImGui::PushItemWidth(150);
 			ImGui::SliderFloat("Width", &sidebarSettings.width, 100, 500, "%.0f");
 			ImGui::SliderFloat("Height", &sidebarSettings.height, 100, 1080, "%.0f");
 			ImGui::Checkbox("Mouse trigger", &sidebarSettings.mouseTransition);
@@ -726,7 +731,9 @@ void DollyCamPlugin::DrawSettingsWindow()
 			ImGui::DragFloat("Rotation sensitivity", &sidebarSettings.RotationSpeed, 1.0f, 0.0f, 0.0f, "%.2f");
 			ImGui::DragFloat("Rotation power(expontential)", &sidebarSettings.RotationPower, 1.0f, 0.0f, 0.0f, "%.2f");
 
-			SliderFloatWithSteps("Edit update rate [ms]", &sidebarSettings.editTimeLimit, 10.0f, 100.0f, 5, "%.0f");
+			SliderFloatWithSteps("Live edit smoothness (may affect performance)", &sidebarSettings.editTimeLimit, 1.0f, 6.0f, 1.0f, "%.0f");
+
+			ImGui::PopItemWidth();
 		}
 
 		if (ImGui::CollapsingHeader("Tab Settings"))
@@ -759,14 +766,6 @@ void DollyCamPlugin::DrawSettingsWindow()
 					allBindings[command] = newKey;
 				}
 			}
-			//static auto test = "test";
-			//DrawHotkeySelection("hotkeys", &test);
-			//auto take_snapshot_key = cvarManager->GetKeyForBindingString("dolly_snapshot_take"); // <- not in sdk
-			//// Draw combo box with take_snapshot_key as default
-			//if (/*combo box selection changed*/) {
-			//	cvarManager->removeBind("dolly_snapshot_take");   // <- not in sdk
-			//	cvarManager->setBind("new key", "dolly_snapshot_take");
-			// }
 		}
 
 		ImGui::EndChild();
@@ -827,7 +826,7 @@ void DollyCamPlugin::DrawSettingsWindow()
 	ImGui::End();
 }
 
-void DollyCamPlugin::SidebarTransition(float actualWidth)
+bool DollyCamPlugin::SidebarTransition(float actualWidth)
 {
 	actualWidth -= 15;
 	float minAlpha = 0.5;
@@ -835,7 +834,7 @@ void DollyCamPlugin::SidebarTransition(float actualWidth)
 	if (!sidebarSetting.mouseTransition) {
 		sidebarSetting.posOffset = 0;
 		sidebarSetting.alpha = 1;
-		return;
+		return true;
 	}
 	auto mPosX = ImGui::GetMousePos().x;
 	float speed = sidebarSetting.transitionSpeed;
@@ -859,6 +858,8 @@ void DollyCamPlugin::SidebarTransition(float actualWidth)
 			sidebarSetting.posOffset = std::max(0.0f, sidebarSetting.posOffset);
 		}
 	}
+
+	return sidebarSetting.posOffset <= actualWidth;
 }
 
 void DollyCamPlugin::DrawSnapshotsNodes()
@@ -934,7 +935,7 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 			static chrono::system_clock::time_point lastUpdate = chrono::system_clock::now();
 
 			bool doUpdateFrame = false;
-			int updateLimit = guiState.sidebarSettings.editTimeLimit;
+			int updateLimit = 100.0f / guiState.sidebarSettings.editTimeLimit ;
 			auto lspeed = sidebarSettings.LocationSpeed;
 			auto lpower = sidebarSettings.LocationSpeed;
 			auto rSpeed = sidebarSettings.RotationSpeed;
@@ -1308,11 +1309,19 @@ bool DollyCamPlugin::IsActiveOverlay()
 void DollyCamPlugin::OnOpen()
 {
 	isWindowOpen = true;
-	guiState.sidebarSettings.alpha = 1.0f;
-	guiState.sidebarSettings.posOffset = 0;
+	//guiState.sidebarSettings.alpha = 1.0f;
+	//guiState.sidebarSettings.posOffset = 0;
 }
 
 void DollyCamPlugin::OnClose()
 {
-	isWindowOpen = false;
+	if (guiState.showSettings)
+	{
+		SaveSettings();
+		guiState.showSettings = false;
+		gameWrapper->Execute([this](GameWrapper*) {cvarManager->executeCommand("togglemenu " + GetMenuName()); });
+	}
+	else {
+		isWindowOpen = false;
+	}
 }

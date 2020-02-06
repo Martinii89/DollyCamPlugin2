@@ -163,6 +163,7 @@
     <ClInclude Include="models.h" />
     <ClInclude Include="interpstrategies\nbezierinterp.h" />
     <ClInclude Include="nlohmann\json.hpp" />
+    <ClInclude Include="RenderingTools.h" />
     <ClInclude Include="serialization.h" />
     <ClInclude Include="interpstrategies\splineinterp.h" />
     <ClInclude Include="VisualCamera.h" />
@@ -189,6 +190,7 @@
     <ClCompile Include="interpstrategies\tinyspline\tinysplinecpp.cpp" />
     <ClCompile Include="models.cpp" />
     <ClCompile Include="interpstrategies\nbezierinterp.cpp" />
+    <ClCompile Include="RenderingTools.cpp" />
     <ClCompile Include="serialization.cpp" />
     <ClCompile Include="VisualCamera.cpp" />
   </ItemGroup>
