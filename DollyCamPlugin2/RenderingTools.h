@@ -67,9 +67,12 @@ namespace RenderingTools
 	//FUNCTIONS
 	//Quat conversions
 	Rotator QuatToRotator(Quat q);
+	Rotator QuatToRotator2(Quat q);
 	Quat RotatorToQuat(Rotator rot);
 	Matrix3 QuatToMatrix(Quat quat);
 	Quat MatrixToQuat(Matrix3 matrix);
+
+	float QuatDot(const Quat a, const Quat b);
 
 	//Rotations
 	Quat AngleAxisRotation(float angle, Vector axis);
@@ -120,3 +123,8 @@ namespace RenderingTools
 	float GetVisualDistance(CanvasWrapper canvas, Frustum frustum, CameraWrapper camera, Vector objectLocation);
 	void DrawMatrix(CanvasWrapper canvas, Matrix3 matrix, Vector location, float size=100);
 }
+
+Quat operator* (float lhs, const Quat rhs);
+Quat operator+ (const Quat lhs, const Quat rhs);
+Quat operator- (const Quat lhs, const Quat rhs);
+Quat operator- (const Quat &obj);

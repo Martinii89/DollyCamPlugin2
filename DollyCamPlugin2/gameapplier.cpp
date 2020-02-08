@@ -8,9 +8,9 @@ RealGameApplier::RealGameApplier(std::shared_ptr<GameWrapper> gw) : gameWrapper(
 {
 }
 
-void RealGameApplier::SetPOV(Vector location, CustomRotator rotation, float FOV)
+void RealGameApplier::SetPOV(Vector location, Rotator rotation, float FOV)
 {
-	gameWrapper->GetCamera().SetPOV({ location, rotation.ToRotator(), FOV });
+	gameWrapper->GetCamera().SetPOV({ location, rotation, FOV });
 
 }
 
@@ -37,7 +37,7 @@ void MockGameApplier::SetTime(float t)
 	time = t;
 }
 
-void MockGameApplier::SetPOV(Vector location, CustomRotator rotation, float FOV)
+void MockGameApplier::SetPOV(Vector location, Rotator rotation, float FOV)
 {
 	NewPOV newpov = { location, rotation, FOV };
 	pov = newpov;

@@ -13,7 +13,7 @@ NewPOV CosineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	auto currentSnapshot = std::prev(nextSnapshot);
 	// std::next(currentSnapshot);
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame) //We're at the end of the playback
-		return{ Vector(0), CustomRotator(0,0,0), 0 };
+		return{ Vector(0), Rotator(0,0,0), 0 };
 
 
 	float frameDiff = nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp;
@@ -23,7 +23,7 @@ NewPOV CosineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	float t2 = (1 - cos(percElapsed*M_PI)) / 2;
 	NewPOV newPov;
 	newPov.location = currentSnapshot->second.location*(1 - t2) + nextSnapshot->second.location*t2;
-	newPov.rotation = currentSnapshot->second.rotation*(1 - t2) + nextSnapshot->second.rotation*t2;
+	newPov.rotation_rotator = (currentSnapshot->second.rotation*(1 - t2) + nextSnapshot->second.rotation*t2).ToRotator();
 	newPov.FOV = currentSnapshot->second.FOV*(1 - t2) + nextSnapshot->second.FOV*t2;
 	return newPov;
 }
@@ -156,7 +156,7 @@ NewPOV HermiteInterpStrategy::GetPOV(float gameTime, int latestFrame)
 
 	NewPOV newPov;
 	newPov.location = hermiteInterp(startSnapshot->second.location, currentSnapshot->second.location, nextSnapshot->second.location, nextNextSnapshot->second.location, percElapsed);
-	newPov.rotation = hermiteInterp(startSnapshot->second.rotation, currentSnapshot->second.rotation, nextSnapshot->second.rotation, nextNextSnapshot->second.rotation, percElapsed);
+	newPov.rotation_rotator = hermiteInterp(startSnapshot->second.rotation, currentSnapshot->second.rotation, nextSnapshot->second.rotation, nextNextSnapshot->second.rotation, percElapsed).ToRotator();
 	newPov.FOV = hermiteInterp(startSnapshot->second.FOV, currentSnapshot->second.FOV, nextSnapshot->second.FOV, nextNextSnapshot->second.FOV, percElapsed);
 	return newPov;
 }

@@ -5,7 +5,8 @@
 struct NewPOV
 {
 	Vector location;
-	CustomRotator rotation;
+	//CustomRotator rotation;
+	Rotator rotation_rotator;
 	float FOV;
 	POV ToPOV();
 };
@@ -18,6 +19,7 @@ struct CameraSnapshot
 	float FOV = 0.f;
 	Vector location;
 	CustomRotator rotation;
+	Rotator rotation_rotator;
 
 	float weight = 1.f;
 };

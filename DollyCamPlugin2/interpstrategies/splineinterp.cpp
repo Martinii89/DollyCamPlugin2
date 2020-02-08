@@ -61,9 +61,10 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	}
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
-	auto percent = (gameTime - nextSnapshot->second.timeStamp) / (nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp);
+	auto percent = 1.0 - (nextSnapshot->second.timeStamp - gameTime) / ((float)nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp);
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame || t > 1) //We're at the end of the playback
-		return{ Vector(0), CustomRotator(0,0,0), 0 };
+		return{ Vector(0), Rotator(0,0,0), 0 };
+
 
 	//Could this be done in the constructor?
 	//InitPositions(n);
@@ -75,11 +76,11 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	auto rotRes = camRotations.bisect(gameTime, epsilon).result();
 	auto fovRes = camFOVs.bisect(gameTime, epsilon).result();
 
+
 	auto q1 = slerpQuats[currentSnapshot->second.frame];
 	auto q2 = slerpQuats[nextSnapshot->second.frame];
 	auto qSlerp = RenderingTools::Slerp(q1, q2, percent);
-	auto newRotator = RenderingTools::QuatToRotator(qSlerp);
-	auto newCustomRotator = CustomRotator(newRotator.Pitch, newRotator.Yaw, newRotator.Roll);
+	auto newRotator = RenderingTools::QuatToRotator2(qSlerp);
 
 
 	Vector v;
@@ -89,8 +90,9 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 
 	float fov = float(fovRes[1]);
 
-	CustomRotator rot = CustomRotator(float(rotRes[1]), float(rotRes[2]), float(rotRes[3]));
-	return {v, newCustomRotator, fov};
+	//CustomRotator rot = CustomRotator(float(rotRes[1]), float(rotRes[2]), float(rotRes[3]));
+	Rotator rot = Rotator(float(rotRes[1]), float(rotRes[2]), float(rotRes[3]));
+	return {v, newRotator, fov};
 }
 
 std::string SplineInterpStrategy::GetName()
@@ -187,12 +189,14 @@ void SplineInterpStrategy::InitPositions(int numberOfPoints)
 
 void SplineInterpStrategy::InitSlerp(int numberOfPoints)
 {
+	using namespace RenderingTools;
 	auto rotations = std::map<int, Quat>();
 	for (auto& item : *camPath)
 	{
-		Rotator rot = item.second.rotation.ToRotator();
-		Quat q = RenderingTools::RotatorToQuat(rot);
-		rotations.emplace(item.second.frame, q);
+		Rotator rot = item.second.rotation_rotator;
+		Quat q = RotatorToQuat(rot);
+		Quat qnorm = NormalizeQuat(q);
+		rotations.emplace(item.second.frame, qnorm);
 	}
 	slerpQuats = rotations;
 }

@@ -98,7 +98,7 @@ NewPOV CatmullRomInterpStrategy::GetPOV(float gameTime, int latestFrame)
 
 	NewPOV newPov;
 	newPov.location = catmullRom(percElapsed, startSnapshot->second.location, currentSnapshot->second.location, nextSnapshot->second.location, nextNextSnapshot->second.location);
-	newPov.rotation = catmullRom(percElapsed, startSnapshot->second.rotation, currentSnapshot->second.rotation, nextSnapshot->second.rotation, nextNextSnapshot->second.rotation);
+	newPov.rotation_rotator = catmullRom(percElapsed, startSnapshot->second.rotation, currentSnapshot->second.rotation, nextSnapshot->second.rotation, nextNextSnapshot->second.rotation).ToRotator();
 	newPov.FOV = GetCatmullRomPosition(percElapsed, startSnapshot->second.FOV, currentSnapshot->second.FOV, nextSnapshot->second.FOV, nextNextSnapshot->second.FOV);
 	//newPov.FOV = 90;
 	return newPov;

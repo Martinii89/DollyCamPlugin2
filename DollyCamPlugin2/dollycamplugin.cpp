@@ -9,6 +9,7 @@
 
 #include "libs/bakkesutils.h"
 #pragma comment(lib, "BakkesUtils.lib")
+#include "RenderingTools.h"
 
 using namespace std::placeholders;
 

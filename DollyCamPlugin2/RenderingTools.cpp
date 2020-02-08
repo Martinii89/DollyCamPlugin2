@@ -1,8 +1,11 @@
 #include "RenderingTools.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <cmath>
 
 using namespace RenderingTools;
+
+
 
 //Quat conversions
 Rotator RenderingTools::QuatToRotator(Quat quat)
@@ -66,6 +69,30 @@ Rotator RenderingTools::QuatToRotator(Quat quat)
 	int ROLL = (roll_f / M_PI) * 32768;
 
 	return Rotator(PITCH, YAW, ROLL);
+}
+Rotator RenderingTools::QuatToRotator2(Quat q)
+{
+	q = RenderingTools::NormalizeQuat(q);
+	float Yaw, Roll, Pitch;
+	// roll (x-axis rotation)
+	double sinr_cosp = 2 * (q.W * q.X + q.Y * q.Z);
+	double cosr_cosp = 1 - 2 * (q.X * q.X + q.Y * q.Y);
+	Roll = std::atan2(sinr_cosp, cosr_cosp);
+
+	// pitch (y-axis rotation)
+	double sinp = 2 * (q.W * q.Y - q.Z * q.X);
+	if (std::abs(sinp) >= 1)
+		Pitch = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+	else
+		Pitch = std::asin(sinp);
+
+	// yaw (z-axis rotation)
+	double siny_cosp = 2 * (q.W * q.Z + q.X * q.Y);
+	double cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
+	Yaw = std::atan2(siny_cosp, cosy_cosp);
+	//const float radToURot = 180.0f / M_PI;
+	const float radToURot = 32768 / M_PI;
+	return Rotator(-Pitch * radToURot, Yaw * radToURot, -Roll * radToURot);
 }
 Quat RenderingTools::RotatorToQuat(Rotator rot)
 {
@@ -156,6 +183,12 @@ Quat RenderingTools::MatrixToQuat(Matrix3 matrix)
 
 	return q;
 }
+
+float RenderingTools::QuatDot(const Quat a, const Quat b)
+{
+	return a.W * b.W + a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+}
+
 
 //Rotations
 Quat RenderingTools::AngleAxisRotation(float angle, Vector axis)
@@ -319,6 +352,12 @@ Quat RenderingTools::Slerp(Quat q1, Quat q2, float percent)
 	//https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
 	Quat q;
 	double dot = q1.W*q2.W + q1.X*q2.X + q1.Y*q2.Y + q1.Z*q2.Z;
+	// Flip one quat to get the shortest distance
+	if (dot < 0)
+	{
+		q2 = -q2;
+		dot = -dot;
+	}
 	// if qa=qb or qa=-qb then theta = 0 and we can return qa
 	if (abs(dot) >= 1.0)
 	{
@@ -351,6 +390,7 @@ Quat RenderingTools::Slerp(Quat q1, Quat q2, float percent)
 	
 	return q;
 }
+
 Quat RenderingTools::NormalizeQuat(Quat q)
 {
 	float mag = sqrt(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W);
@@ -918,4 +958,24 @@ void RenderingTools::DrawMatrix(CanvasWrapper canvas, Matrix3 matrix, Vector loc
 	canvas.SetColor(255,255,255,255);
 	canvas.SetPosition(root.minus({boxSize/2,boxSize/2}));
 	canvas.FillBox(Vector2{boxSize,boxSize});
+}
+
+Quat operator*(float lhs, const Quat rhs)
+{
+	return { lhs * rhs.X, lhs * rhs.Y , lhs * rhs.Z , lhs * rhs.W };
+}
+
+Quat operator+(const Quat lhs, const Quat rhs)
+{
+	return {lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z, lhs.W + rhs.W};
+}
+
+Quat operator-(const Quat lhs, const Quat rhs)
+{
+	return { lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z, lhs.W - rhs.W };
+}
+
+Quat operator-(const Quat& obj)
+{
+	return { -obj.X, -obj.Y, -obj.Z, -obj.W };
 }

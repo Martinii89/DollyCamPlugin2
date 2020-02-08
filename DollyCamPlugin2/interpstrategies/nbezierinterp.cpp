@@ -66,7 +66,7 @@ NewPOV NBezierInterpStrategy::GetPOV(float gameTime, int latestFrame)
 		fov = fov + fov2;
 		k++;
 	}
-	return{ v, rot, fov };
+	return{ v, rot.ToRotator(), fov };
 }
 
 std::string NBezierInterpStrategy::GetName()

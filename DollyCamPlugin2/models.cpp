@@ -2,5 +2,5 @@
 
 POV NewPOV::ToPOV()
 {
-	return{ location, rotation.ToRotator(), FOV };
+	return{ location, rotation_rotator, FOV };
 }

@@ -9,7 +9,7 @@
 class IGameApplier
 {
 public:
-	virtual void SetPOV(Vector location, CustomRotator rotation, float FOV) = 0;
+	virtual void SetPOV(Vector location, Rotator rotation, float FOV) = 0;
 	virtual NewPOV GetPOV() = 0;
 };
 
@@ -19,7 +19,7 @@ private:
 	std::shared_ptr<GameWrapper> gameWrapper;
 public:
 	RealGameApplier(std::shared_ptr<GameWrapper> gw);
-	void SetPOV(Vector location, CustomRotator rotation, float FOV);
+	void SetPOV(Vector location, Rotator rotation, float FOV);
 	NewPOV GetPOV();
 };
 
@@ -33,6 +33,6 @@ public:
 	MockGameApplier(string filename);
 	~MockGameApplier();
 	void SetTime(float time);
-	void SetPOV(Vector location, CustomRotator rotation, float FOV);
+	void SetPOV(Vector location, Rotator rotation, float FOV);
 	NewPOV GetPOV();
 };

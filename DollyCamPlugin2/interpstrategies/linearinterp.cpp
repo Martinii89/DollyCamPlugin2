@@ -12,7 +12,7 @@ NewPOV LinearInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	auto currentSnapshot = std::prev(nextSnapshot);
 	// std::next(currentSnapshot);
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame) //We're at the end of the playback
-		return{ Vector(0), CustomRotator(0,0,0), 0 };
+		return{ Vector(0), Rotator(0,0,0), 0 };
 
 
 	float frameDiff = nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp;
@@ -28,7 +28,7 @@ NewPOV LinearInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	CustomRotator dif = (currentSnapshot->second.rotation.diffTo(nextSnapshot->second.rotation));
 	CustomRotator dif2 = dif * percElapsed;
 	CustomRotator rot2 = currentSnapshot->second.rotation + dif2;
-	pov.rotation = rot2;
+	pov.rotation_rotator = rot2.ToRotator();
 	//FiniteElement<float> pitchDif = (nextSnapshot->second.rotation.Pitch - currentSnapshot->second.rotation.Pitch);
 	//FiniteElement<float> pitchDif2 = (pitchDif * percElapsed);
 	//pov.rotation.Pitch = currentSnapshot->second.rotation.Pitch + pitchDif2;

@@ -7,6 +7,7 @@
 
 #include "interpstrategies\supportedstrategies.h"
 #include "serialization.h"
+#include "RenderingTools.h"
 
 void DollyCam::UpdateRenderPath()
 {
@@ -44,7 +45,8 @@ void DollyCam::UpdateRenderPath()
 		snapshot.timeStamp = beginTime + (timePerFrame * (i - lastSyncedFrame));
 		NewPOV pov = locationRenderStrategy->GetPOV(snapshot.timeStamp, i);
 		snapshot.location = pov.location;
-		snapshot.rotation = pov.rotation;
+		snapshot.rotation =  CustomRotator(pov.rotation_rotator);
+		snapshot.rotation_rotator = pov.rotation_rotator;
 		snapshot.FOV = pov.FOV;
 
 		if (snapshot.FOV > 1)
@@ -91,6 +93,7 @@ CameraSnapshot DollyCam::TakeSnapshot(bool saveToPath)
 	save.FOV = flyCam.GetFOV();
 	save.location = flyCam.GetLocation();
 	save.rotation = CustomRotator(flyCam.GetRotation());
+	save.rotation_rotator = flyCam.GetRotation();
 	save.frame = sw.GetCurrentReplayFrame();
 
 	if (saveToPath) {
@@ -167,13 +170,13 @@ void DollyCam::Apply()
 	if (!usesSameInterp)
 	{
 		NewPOV secondaryPov = rotationInterpStrategy->GetPOV(sw.GetSecondsElapsed() - diff + currentPath->begin()->second.timeStamp, currentFrame);
-		pov.rotation = secondaryPov.rotation;
+		pov.rotation_rotator = secondaryPov.rotation_rotator;
 		pov.FOV = secondaryPov.FOV;
 	}
 	if (pov.FOV < 1) { //Invalid camerastate
 		return;
 	}
-	gameApplier->SetPOV(pov.location, pov.rotation, pov.FOV);
+	gameApplier->SetPOV(pov.location, pov.rotation_rotator, pov.FOV);
 	//flyCam.SetPOV(pov.ToPOV());
 }
 
@@ -368,6 +371,18 @@ void DollyCam::Render(CanvasWrapper cw)
 		}
 		index++;
 	}
+	/*auto rot = rotation;
+	auto r = CustomRotator(rot);
+	auto q = RenderingTools::RotatorToQuat(rot);
+	auto rot2 = RenderingTools::QuatToRotator2(q);
+	cam.SetRotation(rot2);
+	cw.SetColor(255, 255, 255, 255);
+	cw.SetPosition(Vector2({ 0, 0 }));
+	cw.DrawString("snap rotator: " + std::to_string(rot.Pitch) + ",  " + std::to_string(rot.Yaw) + ",  " + std::to_string(rot.Roll));
+	cw.SetPosition(Vector2({ 0, 20 }));
+	cw.DrawString("snap custom rotator: " + std::to_string(r.Pitch._value) + ", " + std::to_string(r.Yaw._value) + ",  " + std::to_string(r.Roll._value));
+	cw.SetPosition(Vector2({ 0, 40 }));
+	cw.DrawString("rot->quat->rot: " + std::to_string(rot2.Pitch) + ",  " + std::to_string(rot2.Yaw) + ",  " + std::to_string(rot2.Roll));*/
 }
 
 void DollyCam::RefreshInterpData()
