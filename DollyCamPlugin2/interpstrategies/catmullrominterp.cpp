@@ -60,7 +60,7 @@ CustomRotator catmullRom(float t, CustomRotator p0, CustomRotator p1, CustomRota
 }
 
 
-NewPOV CatmullRomInterpStrategy::GetPOV(float gameTime, int latestFrame)
+NewPOV CatmullRomInterpStrategy::GetPOV(float gameTime, float latestFrame)
 {
 	if (camPath->size() < 4) //Need atleast 4 elements
 		return{ 0 };

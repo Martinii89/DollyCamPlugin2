@@ -7,7 +7,7 @@ CosineInterpStrategy::CosineInterpStrategy(std::shared_ptr<savetype> _camPath)
 	camPath = std::make_unique<savetype>(*_camPath);
 }
 
-NewPOV CosineInterpStrategy::GetPOV(float gameTime, int latestFrame)
+NewPOV CosineInterpStrategy::GetPOV(float gameTime, float latestFrame)
 {
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
@@ -129,7 +129,7 @@ CustomRotator hermiteInterp(CustomRotator p0, CustomRotator p1, CustomRotator p2
 	return CustomRotator(hermiteInterp((float)p0.Pitch, (float)p1.Pitch, (float)p2.Pitch, (float)p3.Pitch, t), hermiteInterp((float)p0.Yaw, (float)p1.Yaw, (float)p2.Yaw, (float)p3.Yaw, t), hermiteInterp((float)p0.Roll, (float)p1.Roll, (float)p2.Roll, (float)p3.Roll, t));
 }
 
-NewPOV HermiteInterpStrategy::GetPOV(float gameTime, int latestFrame)
+NewPOV HermiteInterpStrategy::GetPOV(float gameTime, float latestFrame)
 {
 	if (camPath->size() < 4) //Need atleast 4 elements
 		return{ 0 };

@@ -7,6 +7,6 @@ private:
 	std::shared_ptr<LinearInterpStrategy> linearInterp;
 public:
 	CatmullRomInterpStrategy(std::shared_ptr<savetype> _camPath, int chaikinDegree);
-	virtual NewPOV GetPOV(float gameTime, int latestFrame);
+	virtual NewPOV GetPOV(float gameTime, float latestFrame);
 	virtual std::string GetName();
 };

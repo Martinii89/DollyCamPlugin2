@@ -160,6 +160,11 @@
     <ClInclude Include="interpstrategies\tinyspline\parson.h" />
     <ClInclude Include="interpstrategies\tinyspline\tinyspline.h" />
     <ClInclude Include="interpstrategies\tinyspline\tinysplinecpp.h" />
+    <ClInclude Include="math\FMath.h" />
+    <ClInclude Include="math\Fmatrix.h" />
+    <ClInclude Include="math\Fquat.h" />
+    <ClInclude Include="math\FRotator.h" />
+    <ClInclude Include="math\math_includes.h" />
     <ClInclude Include="models.h" />
     <ClInclude Include="interpstrategies\nbezierinterp.h" />
     <ClInclude Include="nlohmann\json.hpp" />
@@ -188,6 +193,8 @@
     <ClCompile Include="interpstrategies\tinyspline\parson.c" />
     <ClCompile Include="interpstrategies\tinyspline\tinyspline.c" />
     <ClCompile Include="interpstrategies\tinyspline\tinysplinecpp.cpp" />
+    <ClCompile Include="math\Fquat.cpp" />
+    <ClCompile Include="math\FRotator.cpp" />
     <ClCompile Include="models.cpp" />
     <ClCompile Include="interpstrategies\nbezierinterp.cpp" />
     <ClCompile Include="RenderingTools.cpp" />

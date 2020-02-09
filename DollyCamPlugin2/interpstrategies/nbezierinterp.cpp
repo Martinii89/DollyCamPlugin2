@@ -12,7 +12,7 @@ uint64_t calc_factorial(uint64_t n) //cache this maybe
 	return (n == 1 || n == 0) ? 1 : calc_factorial(n - 1) * n;
 }
 
-NewPOV NBezierInterpStrategy::GetPOV(float gameTime, int latestFrame)
+NewPOV NBezierInterpStrategy::GetPOV(float gameTime, float latestFrame)
 {
 	auto startSnapshot = camPath->begin();
 	auto endSnapshot = (--camPath->end());

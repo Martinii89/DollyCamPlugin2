@@ -39,6 +39,9 @@
     <Filter Include="imgui\headers">
       <UniqueIdentifier>{9fc89af7-9494-4546-ad6f-de25fcc463e6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="math">
+      <UniqueIdentifier>{ab5164eb-a2f1-4141-8004-7492f5a64794}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dollycamplugin.h">
@@ -137,6 +140,21 @@
     <ClInclude Include="RenderingTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="math\Fquat.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Fmatrix.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\FMath.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\FRotator.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\math_includes.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dollycamplugin.cpp">
@@ -210,6 +228,12 @@
     </ClCompile>
     <ClCompile Include="RenderingTools.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="math\FRotator.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="math\Fquat.cpp">
+      <Filter>math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

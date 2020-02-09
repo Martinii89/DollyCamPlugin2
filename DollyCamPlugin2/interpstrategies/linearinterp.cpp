@@ -6,7 +6,7 @@ LinearInterpStrategy::LinearInterpStrategy(std::shared_ptr<savetype> _camPath, i
 	//camPath = std::make_unique<savetype>(*_camPath); //Copy campath
 }
 
-NewPOV LinearInterpStrategy::GetPOV(float gameTime, int latestFrame)
+NewPOV LinearInterpStrategy::GetPOV(float gameTime, float latestFrame)
 {
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);

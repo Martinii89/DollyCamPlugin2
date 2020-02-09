@@ -7,7 +7,7 @@
 
 #include "interpstrategies\supportedstrategies.h"
 #include "serialization.h"
-#include "RenderingTools.h"
+#include "math/math_includes.h"
 
 void DollyCam::UpdateRenderPath()
 {
@@ -62,6 +62,21 @@ void DollyCam::CheckIfSameInterp()
 void DollyCam::ResetAnimations()
 {
 	gameWrapper->ExecuteUnrealCommand("SET SeqAct_Interp Position 0.0");
+}
+
+float DollyCam::GetAccuarateFrame()
+{
+	if (!gameWrapper->IsInReplay())
+		return -1.0f;
+	auto replay = gameWrapper->GetGameEventAsReplay().GetReplay();
+	auto replay = gameWrapper->GetGameEventAsReplay().GetReplay();
+	auto recordedFPS = replay.GetRecordFPS();
+	auto recordedFrameTime = 1.0f / recordedFPS;
+	auto dt = replay.GetAccumulatedDeltaTime();
+	auto delta_frame = dt / recordedFrameTime;
+	//delta_frame = std::min(1.0f, delta_frame);
+	auto floatFrame = replay.GetCurrentFrame() + delta_frame;
+	return floatFrame;
 }
 
 DollyCam::DollyCam(std::shared_ptr<GameWrapper> _gameWrapper, std::shared_ptr<CVarManagerWrapper> _cvarManager, std::shared_ptr<IGameApplier> _gameApplier)
@@ -166,10 +181,13 @@ void DollyCam::Apply()
 		isFirst = true;
 	}
 
-	NewPOV pov = locationInterpStrategy->GetPOV(sw.GetSecondsElapsed() - diff + currentPath->begin()->second.timeStamp, currentFrame);
+
+	auto floatFrame = GetAccuarateFrame();
+	auto oldTiming = sw.GetSecondsElapsed() - diff + currentPath->begin()->second.timeStamp;
+	NewPOV pov = locationInterpStrategy->GetPOV(oldTiming, floatFrame);
 	if (!usesSameInterp)
 	{
-		NewPOV secondaryPov = rotationInterpStrategy->GetPOV(sw.GetSecondsElapsed() - diff + currentPath->begin()->second.timeStamp, currentFrame);
+		NewPOV secondaryPov = rotationInterpStrategy->GetPOV(oldTiming, floatFrame);
 		pov.rotation_rotator = secondaryPov.rotation_rotator;
 		pov.FOV = secondaryPov.FOV;
 	}
@@ -177,7 +195,6 @@ void DollyCam::Apply()
 		return;
 	}
 	gameApplier->SetPOV(pov.location, pov.rotation_rotator, pov.FOV);
-	//flyCam.SetPOV(pov.ToPOV());
 }
 
 void DollyCam::Reset()
@@ -371,18 +388,44 @@ void DollyCam::Render(CanvasWrapper cw)
 		}
 		index++;
 	}
-	/*auto rot = rotation;
-	auto r = CustomRotator(rot);
-	auto q = RenderingTools::RotatorToQuat(rot);
-	auto rot2 = RenderingTools::QuatToRotator2(q);
-	cam.SetRotation(rot2);
+	auto rot = FFRotator(rotation);
+	auto q = FQuat(rot);
+	auto rot2 = q.ToFFRotator();
+	auto rotator = rot2.ToRotator();
+	//cam.SetRotation(rotator);
 	cw.SetColor(255, 255, 255, 255);
 	cw.SetPosition(Vector2({ 0, 0 }));
-	cw.DrawString("snap rotator: " + std::to_string(rot.Pitch) + ",  " + std::to_string(rot.Yaw) + ",  " + std::to_string(rot.Roll));
+	cw.DrawString("camera FFRotator: " + std::to_string(rot.Pitch) + ",  " + std::to_string(rot.Yaw) + ",  " + std::to_string(rot.Roll));
 	cw.SetPosition(Vector2({ 0, 20 }));
-	cw.DrawString("snap custom rotator: " + std::to_string(r.Pitch._value) + ", " + std::to_string(r.Yaw._value) + ",  " + std::to_string(r.Roll._value));
+	cw.DrawString("FQuat values: [X:" + std::to_string(q.X) + ", Y:" + std::to_string(q.Y) + ", Z:" + std::to_string(q.Z) + ", W:" + std::to_string(q.W));
 	cw.SetPosition(Vector2({ 0, 40 }));
-	cw.DrawString("rot->quat->rot: " + std::to_string(rot2.Pitch) + ",  " + std::to_string(rot2.Yaw) + ",  " + std::to_string(rot2.Roll));*/
+	cw.DrawString("rot->quat->rot: " + std::to_string(rot2.Pitch) + ",  " + std::to_string(rot2.Yaw) + ",  " + std::to_string(rot2.Roll));
+	
+	auto replay = sw.GetReplay();
+	CameraWrapper flyCam = gameWrapper->GetCamera();
+
+	auto timeStamp = sw.GetReplayTimeElapsed();
+	auto frame = sw.GetCurrentReplayFrame();
+	auto replay_frame = replay.GetCurrentFrame();
+//#undef GetCurrentTime
+	auto replay_currenttime = replay.GetCurrentTime();
+	auto replay_playbacktime = replay.GetPlaybackTime();
+	auto dt = replay.GetAccumulatedDeltaTime();
+	cw.SetPosition(Vector2({ 0, 60 }));
+	cw.DrawString("Timestamp: " + std::to_string(timeStamp));
+	cw.SetPosition(Vector2({ 0, 80 }));
+	cw.DrawString("Frame: " + std::to_string(frame));
+
+	cw.SetPosition(Vector2({ 0, 100 }));
+	cw.DrawString("Replay Frame: " + std::to_string(replay_frame));
+
+	cw.SetPosition(Vector2({ 0, 120 }));
+	cw.DrawString("Replay current time: " + std::to_string(replay_currenttime));
+
+	cw.SetPosition(Vector2({ 0, 140 }));
+	cw.DrawString("Replay playback time: " + std::to_string(replay_playbacktime));	
+	cw.SetPosition(Vector2({ 0, 160 }));
+	cw.DrawString("Acumulated delta time: " + std::to_string(dt));
 }
 
 void DollyCam::RefreshInterpData()

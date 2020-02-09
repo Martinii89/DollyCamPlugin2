@@ -3,6 +3,7 @@
 #include "nbezierinterp.h"
 #include "../RenderingTools.h"
 #include "bakkesmod/wrappers/wrapperstructs.h"
+#include "utils/parser.h"
 
 vector<tinyspline::real> SolveForT(tinyspline::BSpline &spline, float tGoal, float e, int maxSteps = 50)
 {
@@ -48,11 +49,10 @@ SplineInterpStrategy::SplineInterpStrategy(std::shared_ptr<savetype> _camPath, i
 
 }
 
-NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
+NewPOV SplineInterpStrategy::GetPOV(float gameTime, float latestFrame)
 {
 	//auto t = GetRelativeTime(gameTime);
 	auto t = GetRelativeTimeFromFrame(latestFrame);
-
 
 	int n = camPath->size();
 	if (n < 4)
@@ -61,26 +61,24 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, int latestFrame)
 	}
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
-	auto percent = 1.0 - (nextSnapshot->second.timeStamp - gameTime) / ((float)nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp);
+	//auto percent = 1.0 - (nextSnapshot->second.timeStamp - gameTime) / ((float)nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp);
+	auto framePercent = 1.0 - (nextSnapshot->second.frame - latestFrame) / ((float)nextSnapshot->second.frame - currentSnapshot->second.frame);
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame || t > 1) //We're at the end of the playback
 		return{ Vector(0), Rotator(0,0,0), 0 };
 
 
-	//Could this be done in the constructor?
-	//InitPositions(n);
-	//InitRotations(n);
-	//InitFOVs(n);
 	int accuracy = cvarManager->getCvar("dolly_spline_acc").getIntValue();
 	float epsilon = 1.0 / accuracy; // Acceptable error is 1 / 1000 seconds.
 	auto posRes = camPositions.bisect(gameTime, epsilon).result();
 	auto rotRes = camRotations.bisect(gameTime, epsilon).result();
 	auto fovRes = camFOVs.bisect(gameTime, epsilon).result();
 
-
 	auto q1 = slerpQuats[currentSnapshot->second.frame];
 	auto q2 = slerpQuats[nextSnapshot->second.frame];
-	auto qSlerp = RenderingTools::Slerp(q1, q2, percent);
-	auto newRotator = RenderingTools::QuatToRotator2(qSlerp);
+	auto qSlerp = FQuat::Slerp(q1, q2, framePercent);
+
+	//auto qSlerp = RenderingTools::Slerp(q1, q2, percent);
+	auto newRotator = qSlerp.ToFFRotator().ToRotator();
 
 
 	Vector v;
@@ -111,7 +109,7 @@ float SplineInterpStrategy::GetRelativeTime(float gameTime)
 	return t;
 }
 
-float SplineInterpStrategy::GetRelativeTimeFromFrame(int frame)
+float SplineInterpStrategy::GetRelativeTimeFromFrame(float frame)
 {
 	auto startSnapshot = camPath->begin();
 	auto endSnapshot = (--camPath->end());
@@ -190,13 +188,14 @@ void SplineInterpStrategy::InitPositions(int numberOfPoints)
 void SplineInterpStrategy::InitSlerp(int numberOfPoints)
 {
 	using namespace RenderingTools;
-	auto rotations = std::map<int, Quat>();
+	auto rotations = std::map<int, FQuat>();
 	for (auto& item : *camPath)
 	{
 		Rotator rot = item.second.rotation_rotator;
-		Quat q = RotatorToQuat(rot);
-		Quat qnorm = NormalizeQuat(q);
-		rotations.emplace(item.second.frame, qnorm);
+		FFRotator frot = FFRotator(rot);
+		FQuat q = FQuat(frot);
+		q.Normalize();
+		rotations.emplace(item.second.frame, q);
 	}
 	slerpQuats = rotations;
 }
