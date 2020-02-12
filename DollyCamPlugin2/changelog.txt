@@ -10,6 +10,7 @@ Version 2.1 (Feb 2020)
 			- Rewind (rewinds a little bit before the first snapshot)
 			- Activate \ Deactivate (button changes based in current state)
 			- Take snapshot
+		* Sidebar slightly visible all the time
 
 	Lots of settings related to the sidebar:
 		* Toggle for compact style
@@ -19,7 +20,7 @@ Version 2.1 (Feb 2020)
 		* Transition speed
 		* The sensitivity of the location\rotation sliders
 		* The update rate while editing
-			- Turning this lower gives a smoother editing experience at the expense of performance\fps lag (and possible crashes in some cases)
+			- Turning this higher gives a smoother editing experience at the expense of performance\fps lag (and possible crashes in some cases)
 
 	Some settings for toggling the visibility of:
 		* Old snapshot list tab
@@ -47,5 +48,6 @@ Version 2.1 (Feb 2020)
 	Animation reset:
 		* When the dolly is activated and hits the first frame of the path. We attempt to reset the animation of certain assets around the map
 
+	Hitting ESC while settings window is open closes just the settings window, not the sidebar.
 
 

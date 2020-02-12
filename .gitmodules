@@ -4,3 +4,6 @@
 [submodule "DollyCamPlugin2/json"]
 	path = DollyCamPlugin2/json
 	url = https://github.com/nlohmann/json.git
+[submodule "DollyCamPlugin2/UE4Math"]
+	path = DollyCamPlugin2/UE4Math
+	url = https://github.com/Martinii89/UE4Math.git

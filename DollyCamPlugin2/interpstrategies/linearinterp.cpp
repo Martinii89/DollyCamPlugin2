@@ -15,15 +15,14 @@ NewPOV LinearInterpStrategy::GetPOV(float gameTime, float latestFrame)
 		return{ Vector(0), Rotator(0,0,0), 0 };
 
 
-	float frameDiff = nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp;
-	float timeElapsed = gameTime - currentSnapshot->second.timeStamp;
+	float frameDiff = nextSnapshot->second.frame - currentSnapshot->second.frame;
+	float timeElapsed = latestFrame - currentSnapshot->second.frame;
 	float percElapsed = timeElapsed / frameDiff;
 
-	CustomRotator snapR = CustomRotator(frameDiff, frameDiff, frameDiff);
 	Vector snap = Vector(frameDiff);
 
 	NewPOV pov; //((currentSnapshot->second.rotation.diffTo(nextSnapshot->second.rotation))
-	pov.location = currentSnapshot->second.location + (((nextSnapshot->second.location - currentSnapshot->second.location) * timeElapsed) / snap);
+	pov.location = currentSnapshot->second.location + (nextSnapshot->second.location - currentSnapshot->second.location) * percElapsed;
 
 	CustomRotator dif = (currentSnapshot->second.rotation.diffTo(nextSnapshot->second.rotation));
 	CustomRotator dif2 = dif * percElapsed;
@@ -39,7 +38,7 @@ NewPOV LinearInterpStrategy::GetPOV(float gameTime, float latestFrame)
 	//pov.rotation.Roll = currentSnapshot->second.rotation.Roll + ((nextSnapshot->second.rotation.Roll - currentSnapshot->second.rotation.Roll) * percElapsed);
 	//
 
-	pov.FOV = currentSnapshot->second.FOV + (((nextSnapshot->second.FOV - currentSnapshot->second.FOV) * timeElapsed) / frameDiff);
+	pov.FOV = currentSnapshot->second.FOV + (nextSnapshot->second.FOV - currentSnapshot->second.FOV) * percElapsed;
 
 	return pov;
 }
