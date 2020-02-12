@@ -6,39 +6,26 @@ LinearInterpStrategy::LinearInterpStrategy(std::shared_ptr<savetype> _camPath, i
 	//camPath = std::make_unique<savetype>(*_camPath); //Copy campath
 }
 
-NewPOV LinearInterpStrategy::GetPOV(float gameTime, float latestFrame)
+NewPOV LinearInterpStrategy::GetPOV(float latestFrame)
 {
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
-	// std::next(currentSnapshot);
+
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame) //We're at the end of the playback
 		return{ Vector(0), Rotator(0,0,0), 0 };
 
+	float t = percElapsed(latestFrame);
 
-	float frameDiff = nextSnapshot->second.frame - currentSnapshot->second.frame;
-	float timeElapsed = latestFrame - currentSnapshot->second.frame;
-	float percElapsed = timeElapsed / frameDiff;
-
-	Vector snap = Vector(frameDiff);
-
-	NewPOV pov; //((currentSnapshot->second.rotation.diffTo(nextSnapshot->second.rotation))
-	pov.location = currentSnapshot->second.location + (nextSnapshot->second.location - currentSnapshot->second.location) * percElapsed;
+	NewPOV pov; 
+	pov.location = currentSnapshot->second.location + (nextSnapshot->second.location - currentSnapshot->second.location) * t;
 
 	CustomRotator dif = (currentSnapshot->second.rotation.diffTo(nextSnapshot->second.rotation));
-	CustomRotator dif2 = dif * percElapsed;
+	CustomRotator dif2 = dif * t;
 	CustomRotator rot2 = currentSnapshot->second.rotation + dif2;
 	pov.rotation_rotator = rot2.ToRotator();
-	//FiniteElement<float> pitchDif = (nextSnapshot->second.rotation.Pitch - currentSnapshot->second.rotation.Pitch);
-	//FiniteElement<float> pitchDif2 = (pitchDif * percElapsed);
-	//pov.rotation.Pitch = currentSnapshot->second.rotation.Pitch + pitchDif2;
 
 
-
-	//pov.rotation.Yaw = currentSnapshot->second.rotation.Yaw + ((nextSnapshot->second.rotation.Yaw - currentSnapshot->second.rotation.Yaw) * percElapsed);
-	//pov.rotation.Roll = currentSnapshot->second.rotation.Roll + ((nextSnapshot->second.rotation.Roll - currentSnapshot->second.rotation.Roll) * percElapsed);
-	//
-
-	pov.FOV = currentSnapshot->second.FOV + (nextSnapshot->second.FOV - currentSnapshot->second.FOV) * percElapsed;
+	pov.FOV = currentSnapshot->second.FOV + (nextSnapshot->second.FOV - currentSnapshot->second.FOV) * t;
 
 	return pov;
 }

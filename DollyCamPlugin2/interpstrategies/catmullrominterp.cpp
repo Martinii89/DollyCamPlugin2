@@ -60,7 +60,7 @@ CustomRotator catmullRom(float t, CustomRotator p0, CustomRotator p1, CustomRota
 }
 
 
-NewPOV CatmullRomInterpStrategy::GetPOV(float gameTime, float latestFrame)
+NewPOV CatmullRomInterpStrategy::GetPOV(float latestFrame)
 {
 	if (camPath->size() < 4) //Need atleast 4 elements
 		return{ 0 };
@@ -70,11 +70,11 @@ NewPOV CatmullRomInterpStrategy::GetPOV(float gameTime, float latestFrame)
 	auto startSnapshot = camPath->upper_bound(latestFrame);
 	if (startSnapshot->first == camPath->begin()->first)
 	{
-		return linearInterp->GetPOV(gameTime, latestFrame);
+		return linearInterp->GetPOV(latestFrame);
 	}
 	if (startSnapshot->first == (--camPath->end())->first || startSnapshot->first == camPath->end()->first)
 	{
-		return linearInterp->GetPOV(gameTime, latestFrame);
+		return linearInterp->GetPOV(latestFrame);
 	}
 
 	int goBack = 2;
@@ -93,8 +93,8 @@ NewPOV CatmullRomInterpStrategy::GetPOV(float gameTime, float latestFrame)
 	auto nextSnapshot = /*isLast ? currentSnapshot : */std::next(currentSnapshot);
 	auto nextNextSnapshot = /*isLast ? nextSnapshot :*/ std::next(nextSnapshot);
 
-	float totalDiff = nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp;// nextNextSnapshot->second.timeStamp - startSnapshot->second.timeStamp;
-	float percElapsed = (gameTime - currentSnapshot->second.timeStamp) / totalDiff;
+	float totalDiff = nextSnapshot->second.frame - currentSnapshot->second.frame;// nextNextSnapshot->second.timeStamp - startSnapshot->second.timeStamp;
+	float percElapsed = (latestFrame - currentSnapshot->second.frame) / totalDiff;
 
 	NewPOV newPov;
 	newPov.location = catmullRom(percElapsed, startSnapshot->second.location, currentSnapshot->second.location, nextSnapshot->second.location, nextNextSnapshot->second.location);

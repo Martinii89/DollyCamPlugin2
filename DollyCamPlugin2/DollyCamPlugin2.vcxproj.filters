@@ -39,8 +39,14 @@
     <Filter Include="imgui\headers">
       <UniqueIdentifier>{9fc89af7-9494-4546-ad6f-de25fcc463e6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="math">
-      <UniqueIdentifier>{ab5164eb-a2f1-4141-8004-7492f5a64794}</UniqueIdentifier>
+    <Filter Include="UE4Math">
+      <UniqueIdentifier>{4d3f14af-cada-4993-85e5-15ad75cf505e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UE4Math\Math">
+      <UniqueIdentifier>{8a47dc3d-0146-4b0b-9adc-03b931850b6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UE4Math\Misc">
+      <UniqueIdentifier>{9e00f3ef-5a21-4c64-a915-e277a203dcec}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -140,20 +146,110 @@
     <ClInclude Include="RenderingTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="math\Fquat.h">
-      <Filter>math</Filter>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Color.h">
+      <Filter>UE4Math\Math</Filter>
     </ClInclude>
-    <ClInclude Include="math\Fmatrix.h">
-      <Filter>math</Filter>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Float16.h">
+      <Filter>UE4Math\Math</Filter>
     </ClInclude>
-    <ClInclude Include="math\FMath.h">
-      <Filter>math</Filter>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Float32.h">
+      <Filter>UE4Math\Math</Filter>
     </ClInclude>
-    <ClInclude Include="math\FRotator.h">
-      <Filter>math</Filter>
+    <ClInclude Include="UE4Math\UE4-Math\Math\InterpCurvePoint.h">
+      <Filter>UE4Math\Math</Filter>
     </ClInclude>
-    <ClInclude Include="math\math_includes.h">
-      <Filter>math</Filter>
+    <ClInclude Include="UE4Math\UE4-Math\Math\IntPoint.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\IntRect.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\IntVector.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Matrix.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\NumericLimits.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Plane.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Quat.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\QuatRotationTranslationMatrix.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\RotationAboutPointMatrix.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\RotationMatrix.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\RotationTranslationMatrix.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Rotator.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\TwoVectors.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMath.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathFPU.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathUtility.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathVectorCommon.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathVectorConstants.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector2D.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector2DHalf.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector4.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\VectorRegister.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Axis.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Math\Box.h">
+      <Filter>UE4Math\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\GenericPlatform\GenericPlatformMath.h">
+      <Filter>UE4Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Memory\FMemory.h">
+      <Filter>UE4Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Misc\CoreMiscDefines.h">
+      <Filter>UE4Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Misc\IsPODType.h">
+      <Filter>UE4Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4Math\UE4-Math\Windows\WindowsPlatformMath.h">
+      <Filter>UE4Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="UE4MathConverters.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -229,11 +325,11 @@
     <ClCompile Include="RenderingTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="math\FRotator.cpp">
-      <Filter>math</Filter>
+    <ClCompile Include="UE4Math\UE4-Math\Math\UnrealMath.cpp">
+      <Filter>UE4Math\Math</Filter>
     </ClCompile>
-    <ClCompile Include="math\Fquat.cpp">
-      <Filter>math</Filter>
+    <ClCompile Include="UE4Math\UE4-Math\Memory\FMemory.cpp">
+      <Filter>UE4Math\Misc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

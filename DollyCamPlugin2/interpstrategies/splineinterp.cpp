@@ -1,9 +1,11 @@
 #include <map>
 #include "splineinterp.h"
 #include "nbezierinterp.h"
-#include "../RenderingTools.h"
 #include "bakkesmod/wrappers/wrapperstructs.h"
 #include "utils/parser.h"
+#include "..\UE4MathConverters.h"
+
+namespace U = UE4Math;
 
 vector<tinyspline::real> SolveForT(tinyspline::BSpline &spline, float tGoal, float e, int maxSteps = 50)
 {
@@ -44,12 +46,12 @@ SplineInterpStrategy::SplineInterpStrategy(std::shared_ptr<savetype> _camPath, i
 		InitPositions(n);
 		InitRotations(n);
 		InitFOVs(n);
-		InitSlerp(n);
+		//InitSlerp(n);
 	}
 
 }
 
-NewPOV SplineInterpStrategy::GetPOV(float gameTime, float latestFrame)
+NewPOV SplineInterpStrategy::GetPOV(float latestFrame)
 {
 	//auto t = GetRelativeTime(gameTime);
 	auto t = GetRelativeTimeFromFrame(latestFrame);
@@ -57,7 +59,7 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, float latestFrame)
 	int n = camPath->size();
 	if (n < 4)
 	{
-		return backupStrategy->GetPOV(gameTime, latestFrame);
+		return backupStrategy->GetPOV(latestFrame);
 	}
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
@@ -69,17 +71,30 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, float latestFrame)
 
 	int accuracy = cvarManager->getCvar("dolly_spline_acc").getIntValue();
 	float epsilon = 1.0 / accuracy; // Acceptable error is 1 / 1000 seconds.
-	auto posRes = camPositions.bisect(gameTime, epsilon).result();
-	auto rotRes = camRotations.bisect(gameTime, epsilon).result();
-	auto fovRes = camFOVs.bisect(gameTime, epsilon).result();
+	auto posRes = camPositions.bisect(latestFrame, epsilon).result();
+	auto rotRes = camRotations.bisect(latestFrame, epsilon).result();
+	auto fovRes = camFOVs.bisect(latestFrame, epsilon).result();
 
-	auto q1 = slerpQuats[currentSnapshot->second.frame];
-	auto q2 = slerpQuats[nextSnapshot->second.frame];
-	auto qSlerp = FQuat::Slerp(q1, q2, framePercent);
+	//auto q1 = slerpQuats[currentSnapshot->second.frame];
+	//auto q2 = slerpQuats[nextSnapshot->second.frame];
 
-	//auto qSlerp = RenderingTools::Slerp(q1, q2, percent);
-	auto newRotator = qSlerp.ToFFRotator().ToRotator();
+	//auto q1T = quatTangents[currentSnapshot->second.frame];
+	//auto q2T = quatTangents[nextSnapshot->second.frame];
+	//cvarManager->log("Latest frame:" + std::to_string(latestFrame));
+	//cvarManager->log("Current frame:" + std::to_string(currentSnapshot->second.frame));
+	//cvarManager->log("Next frame:" + std::to_string(nextSnapshot->second.frame));
+	//cvarManager->log("Percent:" + std::to_string(framePercent));
 
+	//cvarManager->log(q1.Rotator().ToString());
+	//cvarManager->log(q2.Rotator().ToString());
+	//cvarManager->log(q1T.Rotator().ToString());
+	//cvarManager->log(q2T.Rotator().ToString());
+	//auto qSlerp = U::FQuat::Slerp(q1, q2, framePercent);
+	//auto newRotator = ToBMRotator(qSlerp);
+
+	//auto qSquad = U::FQuat::Squad(q1, q1T, q2, q2T, framePercent);
+	//cvarManager->log(qSquad.Rotator().ToString() + "\n");
+	//auto newRotator = ToBMRotator(qSquad);
 
 	Vector v;
 	v.X = float(posRes[1]);
@@ -90,23 +105,12 @@ NewPOV SplineInterpStrategy::GetPOV(float gameTime, float latestFrame)
 
 	//CustomRotator rot = CustomRotator(float(rotRes[1]), float(rotRes[2]), float(rotRes[3]));
 	Rotator rot = Rotator(float(rotRes[1]), float(rotRes[2]), float(rotRes[3]));
-	return {v, newRotator, fov};
+	return {v, rot, fov};
 }
 
 std::string SplineInterpStrategy::GetName()
 {
 	return "Spline interpolation";
-}
-
-float SplineInterpStrategy::GetRelativeTime(float gameTime)
-{
-	auto startSnapshot = camPath->begin();
-	auto endSnapshot = (--camPath->end());
-
-	float totalTime = endSnapshot->second.timeStamp - startSnapshot->second.timeStamp;
-	gameTime -= startSnapshot->second.timeStamp;
-	float t = gameTime / totalTime;
-	return t;
 }
 
 float SplineInterpStrategy::GetRelativeTimeFromFrame(float frame)
@@ -133,7 +137,8 @@ void SplineInterpStrategy::InitFOVs(int numberOfPoints)
 	for (const auto& item : *camPath)
 	{
 		auto point = item.second;
-		POVs.push_back(double(point.timeStamp));
+		//POVs.push_back(double(point.timeStamp));
+		POVs.push_back(double(point.frame));
 		POVs.push_back(double(point.FOV));
 	}
 	camFOVs = tinyspline::Utils::interpolateCubic(&POVs, 2);
@@ -161,7 +166,8 @@ void SplineInterpStrategy::InitRotations(int numberOfPoints)
 
 		previousRotation = thisRotator;
 
-		rotations.push_back(double(point.timeStamp));
+		//rotations.push_back(double(point.timeStamp));
+		rotations.push_back(double(point.frame));
 		rotations.push_back(double(accumulatedPitch));
 		rotations.push_back(double(accumulatedYaw));
 		rotations.push_back(double(accumulatedRoll));
@@ -177,7 +183,8 @@ void SplineInterpStrategy::InitPositions(int numberOfPoints)
 	for (const auto& item : *camPath)
 	{
 		auto point = item.second;
-		positions.push_back(double(point.timeStamp));
+		//positions.push_back(double(point.timeStamp));
+		positions.push_back(double(point.frame));
 		positions.push_back(double(point.location.X));
 		positions.push_back(double(point.location.Y));
 		positions.push_back(double(point.location.Z));
@@ -185,17 +192,40 @@ void SplineInterpStrategy::InitPositions(int numberOfPoints)
 	camPositions = tinyspline::Utils::interpolateCubic(&positions, 4);
 }
 
-void SplineInterpStrategy::InitSlerp(int numberOfPoints)
-{
-	using namespace RenderingTools;
-	auto rotations = std::map<int, FQuat>();
-	for (auto& item : *camPath)
-	{
-		Rotator rot = item.second.rotation_rotator;
-		FFRotator frot = FFRotator(rot);
-		FQuat q = FQuat(frot);
-		q.Normalize();
-		rotations.emplace(item.second.frame, q);
-	}
-	slerpQuats = rotations;
-}
+//void SplineInterpStrategy::InitSlerp(int numberOfPoints)
+//{
+	//auto rotations = std::map<int, U::FQuat>();
+	//std::vector<int> frames;
+	//auto snapshots = *camPath;
+	//for (auto& item : snapshots)
+	//{
+	//	frames.push_back(item.second.frame);
+	//	Rotator rot = item.second.rotation_rotator;
+	//	U::FQuat q = ToQuat(rot);
+	//	q.Normalize();
+	//	rotations.emplace(item.second.frame, q);
+	//}
+	//for (size_t i = 0; i < frames.size(); i++)
+	//{
+	//	U::FQuat prevQ;
+	//	U::FQuat Q = rotations[frames[i]];
+	//	U::FQuat nextQ;
+	//	if (i == 0){
+	//		prevQ = rotations[frames[i]];
+	//	}
+	//	else {
+	//		prevQ = rotations[frames[i - 1]];
+	//	}
+	//	if (i == frames.size() - 1) {
+	//		nextQ = rotations[frames[i]];
+	//	}
+	//	else {
+	//		nextQ = rotations[frames[i + 1]];
+	//	}
+	//	U::FQuat tangent;
+	//	U::FQuat::CalcTangents(prevQ, Q, nextQ, 20, tangent);
+
+	//	quatTangents.emplace(frames[i], tangent);
+	//}
+	//slerpQuats = rotations;
+//}

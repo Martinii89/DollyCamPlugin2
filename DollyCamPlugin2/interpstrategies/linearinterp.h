@@ -4,6 +4,6 @@ class LinearInterpStrategy : public InterpStrategy
 {
 public:
 	LinearInterpStrategy(std::shared_ptr<savetype> _camPath, int degree);
-	virtual NewPOV GetPOV(float gameTime, float latestFrame);
+	virtual NewPOV GetPOV(float latestFrame);
 	virtual std::string GetName();
 };

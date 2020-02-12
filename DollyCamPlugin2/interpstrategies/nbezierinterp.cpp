@@ -12,14 +12,9 @@ uint64_t calc_factorial(uint64_t n) //cache this maybe
 	return (n == 1 || n == 0) ? 1 : calc_factorial(n - 1) * n;
 }
 
-NewPOV NBezierInterpStrategy::GetPOV(float gameTime, float latestFrame)
+NewPOV NBezierInterpStrategy::GetPOV(float latestFrame)
 {
-	auto startSnapshot = camPath->begin();
-	auto endSnapshot = (--camPath->end());
-
-	float totalTime = endSnapshot->second.timeStamp - startSnapshot->second.timeStamp;
-	gameTime -= startSnapshot->second.timeStamp;
-	float t = gameTime / totalTime;
+	float t = percElapsedTotal(latestFrame);
 
 	CustomRotator rot;
 	Vector v;

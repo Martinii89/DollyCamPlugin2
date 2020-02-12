@@ -43,13 +43,13 @@ void from_json(const json& j, CustomRotator& p) {
 }
 
 void to_json(json& j, const CameraSnapshot& p) {
-	j = json{ { "frame", p.frame },{ "timestamp", p.timeStamp },{ "FOV", p.FOV },
+	j = json{ { "frame", p.frame }/*,{ "timestamp", p.timeStamp }*/,{ "FOV", p.FOV },
 	{ "location", p.location },{ "rotation", p.rotation }, { "rotation_rotator", p.rotation_rotator },{ "weight", p.weight } };
 }
 
 void from_json(const json& j, CameraSnapshot& p) {
 	p.frame = j.at("frame").get<int>();
-	p.timeStamp = j.at("timestamp").get<float>();
+	//p.timeStamp = j.at("timestamp").get<float>();
 	p.FOV = j.at("FOV").get<float>();
 	p.location = j.at("location").get<Vector>();
 	p.rotation = (j.at("rotation").get<CustomRotator>());

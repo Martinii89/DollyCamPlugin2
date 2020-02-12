@@ -2,18 +2,17 @@
 #include "interpstrategy.h"
 #include "tinyspline\tinysplinecpp.h"
 #include "bakkesmod\plugin\bakkesmodplugin.h"
-#include "..\math\math_includes.h"
+#include "Math/Quat.h"
 
 class SplineInterpStrategy : public InterpStrategy
 {
 public:
 	SplineInterpStrategy(std::shared_ptr<savetype> _camPath, int degree);
-	virtual NewPOV GetPOV(float gameTime, float latestFrame);
+	virtual NewPOV GetPOV(float latestFrame);
 	virtual std::string GetName();
 	std::shared_ptr<CVarManagerWrapper> cvarManager;
 
 private:
-	float GetRelativeTime(float gameTime);
 
 	float GetRelativeTimeFromFrame(float frame);
 
@@ -21,13 +20,14 @@ private:
 	void InitFOVs(int numberOfPoints);
 	void InitRotations(int numberOfPoints);
 	void InitPositions(int numberOfPoints);
-	void InitSlerp(int numberOfPoints);
+	//void InitSlerp(int numberOfPoints);
 
 	tinyspline::BSpline camPositions;
 	tinyspline::BSpline camRotations;
 	tinyspline::BSpline camFOVs;
 
-	std::map<int, FQuat> slerpQuats;
+	//std::map<int,  UE4Math::FQuat> slerpQuats;
+	//std::map<int,  UE4Math::FQuat> quatTangents;
 
 	std::shared_ptr<InterpStrategy> backupStrategy;
 };

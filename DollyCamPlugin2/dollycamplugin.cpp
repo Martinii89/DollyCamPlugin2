@@ -119,7 +119,7 @@ void DollyCamPlugin::onUnload()
 void DollyCamPlugin::PrintSnapshotInfo(CameraSnapshot shot)
 {
 	cvarManager->log("Frame: " + to_string(shot.frame));
-	cvarManager->log("Time: " + to_string_with_precision(shot.timeStamp, 5));
+	//cvarManager->log("Time: " + to_string_with_precision(shot.timeStamp, 5));
 	cvarManager->log("FOV: " + to_string_with_precision(shot.FOV, 5));
 	cvarManager->log("Location " + vector_to_string(shot.location));
 	cvarManager->log("Rotation " + rotator_to_string(shot.rotation.ToRotator()));
@@ -372,7 +372,7 @@ void DollyCamPlugin::OnSnapshotCommand(vector<string> params)
 		for (auto it = frames.begin(); it != frames.end(); it++)
 		{
 			CameraSnapshot snapshot = dollyCam->GetSnapshot(*it);
-			cvarManager->log("(" + to_string(index) + ") ID: " + to_string(snapshot.frame) + ", [" + to_string_with_precision(snapshot.weight, 2) + "][" + to_string_with_precision(snapshot.timeStamp, 2) + "][" + to_string_with_precision(snapshot.FOV, 2) + "] (" + vector_to_string(snapshot.location) + ") (" + rotator_to_string(snapshot.rotation.ToRotator()) + " )");
+			cvarManager->log("(" + to_string(index) + ") ID: " + to_string(snapshot.frame) + ", [" + to_string_with_precision(snapshot.weight, 2) + "][" /*+ to_string_with_precision(snapshot.timeStamp, 2) + "]["*/ + to_string_with_precision(snapshot.FOV, 2) + "] (" + vector_to_string(snapshot.location) + ") (" + rotator_to_string(snapshot.rotation.ToRotator()) + " )");
 			index++;
 		}
 		cvarManager->log("Current path has " + to_string(frames.size()) + " snapshots.");
@@ -390,7 +390,7 @@ void DollyCamPlugin::OnSnapshotCommand(vector<string> params)
 		else
 		{
 			CameraSnapshot snapshot = dollyCam->GetSnapshot(frame);
-			cvarManager->log("ID " + to_string(snapshot.frame) + ". FOV: " + to_string(snapshot.FOV) + ". Time: " + to_string_with_precision(snapshot.timeStamp, 3) + ". Weight: " + to_string_with_precision(snapshot.weight, 3));
+			cvarManager->log("ID " + to_string(snapshot.frame) + ". FOV: " + to_string(snapshot.FOV)/* + ". Time: " + to_string_with_precision(snapshot.timeStamp, 3)*/ + ". Weight: " + to_string_with_precision(snapshot.weight, 3));
 			cvarManager->log("Location " + vector_to_string(snapshot.location));
 			cvarManager->log("Rotation " + rotator_to_string(snapshot.rotation.ToRotator()));
 			if (params.size() == 3) {

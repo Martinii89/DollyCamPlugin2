@@ -15,7 +15,7 @@ struct CameraSnapshot
 {
 	//int id; 
 	int frame = 0.f; //Lets use frames as ID's
-	float timeStamp = 0.f;
+	//float timeStamp = 0.f;
 	float FOV = 0.f;
 	Vector location;
 	CustomRotator rotation;

@@ -107,7 +107,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(BAKKESMOD)\bakkesmodsdk\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BAKKESMOD)\bakkesmodsdk\include;$(ProjectDir)UE4Math\UE4-Math\</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NOMINMAX;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <LanguageStandard>Default</LanguageStandard>
@@ -160,17 +160,47 @@
     <ClInclude Include="interpstrategies\tinyspline\parson.h" />
     <ClInclude Include="interpstrategies\tinyspline\tinyspline.h" />
     <ClInclude Include="interpstrategies\tinyspline\tinysplinecpp.h" />
-    <ClInclude Include="math\FMath.h" />
-    <ClInclude Include="math\Fmatrix.h" />
-    <ClInclude Include="math\Fquat.h" />
-    <ClInclude Include="math\FRotator.h" />
-    <ClInclude Include="math\math_includes.h" />
     <ClInclude Include="models.h" />
     <ClInclude Include="interpstrategies\nbezierinterp.h" />
     <ClInclude Include="nlohmann\json.hpp" />
     <ClInclude Include="RenderingTools.h" />
     <ClInclude Include="serialization.h" />
     <ClInclude Include="interpstrategies\splineinterp.h" />
+    <ClInclude Include="UE4MathConverters.h" />
+    <ClInclude Include="UE4Math\UE4-Math\GenericPlatform\GenericPlatformMath.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Axis.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Box.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Color.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Float16.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Float32.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\InterpCurvePoint.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\IntPoint.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\IntRect.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\IntVector.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Matrix.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\NumericLimits.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Plane.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Quat.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\QuatRotationTranslationMatrix.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\RotationAboutPointMatrix.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\RotationMatrix.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\RotationTranslationMatrix.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Rotator.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\TwoVectors.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMath.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathFPU.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathUtility.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathVectorCommon.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\UnrealMathVectorConstants.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector2D.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector2DHalf.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\Vector4.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Math\VectorRegister.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Memory\FMemory.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Misc\CoreMiscDefines.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Misc\IsPODType.h" />
+    <ClInclude Include="UE4Math\UE4-Math\Windows\WindowsPlatformMath.h" />
     <ClInclude Include="VisualCamera.h" />
   </ItemGroup>
   <ItemGroup>
@@ -193,12 +223,12 @@
     <ClCompile Include="interpstrategies\tinyspline\parson.c" />
     <ClCompile Include="interpstrategies\tinyspline\tinyspline.c" />
     <ClCompile Include="interpstrategies\tinyspline\tinysplinecpp.cpp" />
-    <ClCompile Include="math\Fquat.cpp" />
-    <ClCompile Include="math\FRotator.cpp" />
     <ClCompile Include="models.cpp" />
     <ClCompile Include="interpstrategies\nbezierinterp.cpp" />
     <ClCompile Include="RenderingTools.cpp" />
     <ClCompile Include="serialization.cpp" />
+    <ClCompile Include="UE4Math\UE4-Math\Math\UnrealMath.cpp" />
+    <ClCompile Include="UE4Math\UE4-Math\Memory\FMemory.cpp" />
     <ClCompile Include="VisualCamera.cpp" />
   </ItemGroup>
   <ItemGroup>

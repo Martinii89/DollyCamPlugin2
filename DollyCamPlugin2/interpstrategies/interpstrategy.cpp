@@ -7,7 +7,7 @@ CosineInterpStrategy::CosineInterpStrategy(std::shared_ptr<savetype> _camPath)
 	camPath = std::make_unique<savetype>(*_camPath);
 }
 
-NewPOV CosineInterpStrategy::GetPOV(float gameTime, float latestFrame)
+NewPOV CosineInterpStrategy::GetPOV(float latestFrame)
 {
 	auto nextSnapshot = camPath->upper_bound(latestFrame);
 	auto currentSnapshot = std::prev(nextSnapshot);
@@ -15,12 +15,9 @@ NewPOV CosineInterpStrategy::GetPOV(float gameTime, float latestFrame)
 	if (currentSnapshot == camPath->end() || nextSnapshot == camPath->end() || camPath->begin()->first > latestFrame) //We're at the end of the playback
 		return{ Vector(0), Rotator(0,0,0), 0 };
 
+	float t = percElapsed(latestFrame);
 
-	float frameDiff = nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp;
-	float timeElapsed = gameTime - currentSnapshot->second.timeStamp;
-	float percElapsed = timeElapsed / frameDiff;
-
-	float t2 = (1 - cos(percElapsed*M_PI)) / 2;
+	float t2 = (1 - cos(t*M_PI)) / 2;
 	NewPOV newPov;
 	newPov.location = currentSnapshot->second.location*(1 - t2) + nextSnapshot->second.location*t2;
 	newPov.rotation_rotator = (currentSnapshot->second.rotation*(1 - t2) + nextSnapshot->second.rotation*t2).ToRotator();
@@ -129,7 +126,7 @@ CustomRotator hermiteInterp(CustomRotator p0, CustomRotator p1, CustomRotator p2
 	return CustomRotator(hermiteInterp((float)p0.Pitch, (float)p1.Pitch, (float)p2.Pitch, (float)p3.Pitch, t), hermiteInterp((float)p0.Yaw, (float)p1.Yaw, (float)p2.Yaw, (float)p3.Yaw, t), hermiteInterp((float)p0.Roll, (float)p1.Roll, (float)p2.Roll, (float)p3.Roll, t));
 }
 
-NewPOV HermiteInterpStrategy::GetPOV(float gameTime, float latestFrame)
+NewPOV HermiteInterpStrategy::GetPOV(float latestFrame)
 {
 	if (camPath->size() < 4) //Need atleast 4 elements
 		return{ 0 };
@@ -151,8 +148,8 @@ NewPOV HermiteInterpStrategy::GetPOV(float gameTime, float latestFrame)
 	auto nextSnapshot = std::next(currentSnapshot);
 	auto nextNextSnapshot = std::next(nextSnapshot);
 
-	float totalDiff = nextSnapshot->second.timeStamp - currentSnapshot->second.timeStamp;// nextNextSnapshot->second.timeStamp - startSnapshot->second.timeStamp;
-	float percElapsed = gameTime / totalDiff;
+	float totalDiff = nextSnapshot->second.frame - currentSnapshot->second.frame;// nextNextSnapshot->second.timeStamp - startSnapshot->second.timeStamp;
+	float percElapsed = latestFrame / totalDiff;
 
 	NewPOV newPov;
 	newPov.location = hermiteInterp(startSnapshot->second.location, currentSnapshot->second.location, nextSnapshot->second.location, nextNextSnapshot->second.location, percElapsed);
@@ -185,7 +182,7 @@ void InterpStrategy::setCamPath(std::shared_ptr<savetype> _camPath, int chaikinA
 			p25.location = current.location * .75f + next.location * .25f;
 			p25.rotation = current.rotation * .75f;
 			p25.rotation += next.rotation * .25f;
-			p25.timeStamp = current.timeStamp * .75f + next.timeStamp * .25f;
+			//p25.timeStamp = current.timeStamp * .75f + next.timeStamp * .25f;
 			p25.weight = current.weight * .75f + next.weight * .25f;
 
 			CameraSnapshot p75;
@@ -194,7 +191,7 @@ void InterpStrategy::setCamPath(std::shared_ptr<savetype> _camPath, int chaikinA
 			p75.location = current.location * .25f + next.location * .75f;
 			p75.rotation = current.rotation * .25f;
 			p75.rotation += next.rotation * .75f;
-			p75.timeStamp = current.timeStamp * .25f + next.timeStamp * .75f;
+			//p75.timeStamp = current.timeStamp * .25f + next.timeStamp * .75f;
 			p75.weight = current.weight * .25f + next.weight * .75f;
 
 			inbetweenPath.insert(std::make_pair(p25.frame, p25));
@@ -202,4 +199,24 @@ void InterpStrategy::setCamPath(std::shared_ptr<savetype> _camPath, int chaikinA
 		}
 		camPath->insert(inbetweenPath.begin(), inbetweenPath.end());
 	}
+}
+
+float InterpStrategy::percElapsed(float currentFrame)
+{
+	auto nextSnapshot = camPath->upper_bound(currentFrame);
+	auto currentSnapshot = std::prev(nextSnapshot);
+
+	float frameDiff = nextSnapshot->second.frame - currentSnapshot->second.frame;
+	float timeElapsed = currentFrame - currentSnapshot->second.frame;
+	float percElapsed = timeElapsed / frameDiff;
+	return percElapsed;
+}
+
+float InterpStrategy::percElapsedTotal(float currentFrame)
+{
+	auto startSnapshot = camPath->begin();
+	auto endSnapshot = (--camPath->end());
+	float totalFrames = endSnapshot->second.frame - startSnapshot->second.frame;
+	float t = currentFrame / totalFrames;
+	return t;
 }
