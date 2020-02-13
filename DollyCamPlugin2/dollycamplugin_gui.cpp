@@ -872,6 +872,7 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 	ImGui::BeginChild("#", ImVec2(0, -25));
 	auto& sidebarSettings = guiState.sidebarSettings;
 	static float subScale = 0.8;
+	static int newFrame = -1;
 	int i = 1;
 	for (const auto& data : *dollyCam->GetCurrentPath())
 	{
@@ -879,7 +880,12 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 		auto snap = data.second;;
 		auto label = std::to_string(data.second.frame) + "##" + std::to_string(i);
 		//ImGui::AlignTextToFramePadding();
+		if (newFrame == snap.frame) {
+			ImGui::SetNextTreeNodeOpen(true);
+			newFrame = -1;
+		}
 		bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowItemOverlap);
+
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0, 0.0));
 		// View toggle
@@ -940,6 +946,44 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 			auto lpower = sidebarSettings.LocationSpeed;
 			auto rSpeed = sidebarSettings.RotationSpeed;
 			auto rpower = sidebarSettings.RotationPower;
+
+			int oldFrame = snap.frame;
+			
+			if (ImGui::InputInt(("Frame##frame" + to_string(i)).c_str(), &snap.frame, 5, 25, ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				newFrame = snap.frame;
+				int newFrame_ = snap.frame;
+				int df = (newFrame > oldFrame) ? 1: -1;
+				CameraSnapshot snap =  dollyCam->GetSnapshot(newFrame);
+				int i = 0;
+				while (snap.frame != -1 && i++ < 100)
+				{
+					newFrame += df;
+					newFrame_ += df;
+					cvarManager->log("trying new frame: " + std::to_string(newFrame));
+					snap = dollyCam->GetSnapshot(newFrame);
+				}
+				dollyCam->gameWrapper->Execute([this, oldFrame, newFrame_](GameWrapper* gw) {dollyCam->ChangeFrame(oldFrame, newFrame_); });
+			}
+
+			//if (ImGui::SliderInt(("Frame##frame" + to_string(i)).c_str(), &snap.frame, snap.frame - 100, snap.frame + 100))
+			//{
+			//	newFrame = snap.frame;
+			//}
+			//if (IsItemJustMadeActive())
+			//{
+			//	cvarManager->log(std::to_string(oldFrame));
+			//	oldFrame = snap.frame;
+			//}
+			//if (IsItemJustMadeInactive())
+			//{
+			//	cvarManager->log("old frame:" + std::to_string(oldFrame));
+			//	cvarManager->log("new frame:" + std::to_string(newFrame));
+			//	cvarManager->log("just inactive. editing the frame");
+			//	int oldFrame_ = oldFrame;
+			//	int newFrame_ = newFrame;
+			//	dollyCam->gameWrapper->Execute([this, newFrame_, oldFrame_](GameWrapper* gw) {dollyCam->ChangeFrame(oldFrame_, newFrame_); });
+			//}
 
 			if (!sidebarSettings.compact)
 			{

@@ -224,6 +224,9 @@ CameraSnapshot DollyCam::GetSnapshot(int frame)
 	{
 		snapshot = it->second;
 	}
+	else {
+		snapshot.frame = -1;
+	}
 	return snapshot;
 }
 

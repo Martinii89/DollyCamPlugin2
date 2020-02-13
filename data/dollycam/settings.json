@@ -1,0 +1,19 @@
+{
+    "sidebarSettings": {
+        "LocationPower": 1.0,
+        "LocationSpeed": 1.0,
+        "RotationPower": 1.0,
+        "RotationSpeed": 10.0,
+        "compact": false,
+        "editTimeLimit": 6.0,
+        "height": 900.0,
+        "mouseTransition": true,
+        "transitionSpeed": 1.0,
+        "triggerWidth": 250.0,
+        "width": 150.0
+    },
+    "tabsSettings": {
+        "cameraOverride": false,
+        "oldSnapshots": false
+    }
+}

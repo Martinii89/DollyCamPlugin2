@@ -13,7 +13,7 @@
 
 using namespace std::placeholders;
 
-BAKKESMOD_PLUGIN(DollyCamPlugin, "Dollycam plugin", "2", PLUGINTYPE_REPLAY | PLUGINTYPE_SPECTATOR)
+BAKKESMOD_PLUGIN(DollyCamPlugin, "Dollycam plugin", "2.1", PLUGINTYPE_REPLAY | PLUGINTYPE_SPECTATOR)
 
 bool DollyCamPlugin::IsApplicable()
 {

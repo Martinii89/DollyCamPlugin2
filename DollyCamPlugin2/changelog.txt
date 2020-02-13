@@ -1,6 +1,6 @@
 Version 2.1 (Feb 2020)
 	SIDEBAR:
-		* Editable location\rotation\POV
+		* Editable location\rotation\POV\frames
 		* You can edit from the POV of the snapshot by clicking the "eye"
 			- Clicking the eye again returns your view to where you were before 
 		* Hold Alt to toggle the camere lock
@@ -44,6 +44,10 @@ Version 2.1 (Feb 2020)
 		* White ticks\boxes are rendered at each frame
 		* A visual camera is rendered at each frame during playback, so you can visually see where the camera would be pointing. 
 			- cvar: (dolly_render_visualcam )
+
+	Time sync:
+		* No longer a need to rewind back to the first snapshot to make everything sync up
+		* Snapshots should keep in sync at all times, even after goals.
 
 	Animation reset:
 		* When the dolly is activated and hits the first frame of the path. We attempt to reset the animation of certain assets around the map
