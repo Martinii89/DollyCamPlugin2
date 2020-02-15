@@ -13,7 +13,7 @@
 
 using namespace std::placeholders;
 
-BAKKESMOD_PLUGIN(DollyCamPlugin, "Dollycam plugin", "2.1", PLUGINTYPE_REPLAY | PLUGINTYPE_SPECTATOR)
+BAKKESMOD_PLUGIN(DollyCamPlugin, "Dollycam plugin", "3.0", PLUGINTYPE_REPLAY | PLUGINTYPE_SPECTATOR)
 
 bool DollyCamPlugin::IsApplicable()
 {
@@ -45,12 +45,11 @@ void DollyCamPlugin::CameraLock(ServerWrapper camInput, void* params, string fun
 
 void DollyCamPlugin::onLoad()
 {
+	LoadSettings();
 	cvarManager->setBind("RightControl+F11", "togglemenu " + GetMenuName());
 
-	//cvarManager->executeCommand("bind \"RightControl+F11\" \"togglemenu "+ GetMenuName() + "\"");
-
 	std::shared_ptr<IGameApplier> gameApplier = std::make_shared<RealGameApplier>(RealGameApplier(gameWrapper));
-	dollyCam = std::make_shared<DollyCam>(DollyCam(gameWrapper, cvarManager, gameApplier));
+	dollyCam = std::make_shared<DollyCam>(DollyCam(gameWrapper, cvarManager, gameApplier, guiState.dollySettings));
 	renderCameraPath = std::make_shared<bool>(true);
 
 	gameWrapper->HookEvent("Function TAGame.CameraState_Replay_TA.UpdatePOV", bind(&DollyCamPlugin::onTick, this, _1));
@@ -58,7 +57,8 @@ void DollyCamPlugin::onLoad()
 	gameWrapper->HookEvent("Function TAGame.GFxHUD_Replay_TA.Destroyed", bind(&DollyCamPlugin::onReplayClose, this, _1));
 	gameWrapper->HookEventWithCaller<ServerWrapper>("Function TAGame.PlayerInput_TA.PlayerInput", bind(&DollyCamPlugin::CameraLock, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-	cvarManager->registerCvar("dolly_interpmode", "5", "Used interp mode", true, true, 0, true, 2000).addOnValueChanged(bind(&DollyCamPlugin::OnInterpModeChanged, this, _1, _2));
+	cvarManager->registerCvar("dolly_interpmode", "5", "Used interp mode", true, true, 0, true, 2000)
+		.addOnValueChanged(bind(&DollyCamPlugin::OnInterpModeChanged, this, _1, _2));
 
 	cvarManager->registerCvar("dolly_interpmode_location", "5", "Used interp mode for location", true, true, 0, true, 2000)
 		.addOnValueChanged(bind(&DollyCamPlugin::OnInterpModeChanged, this, _1, _2));
@@ -66,8 +66,8 @@ void DollyCamPlugin::onLoad()
 		.addOnValueChanged(bind(&DollyCamPlugin::OnInterpModeChanged, this, _1, _2));
 
 	cvarManager->registerCvar("dolly_render", "1", "Render the current camera path", true, true, 0, true, 1).bindTo(renderCameraPath);
-	cvarManager->registerCvar("dolly_render_frame", "1", "Render frame numbers on the path", true, true, 0, true, 1).addOnValueChanged(bind(&DollyCamPlugin::OnRenderFramesChanged, this, _1, _2));
-	cvarManager->registerCvar("dolly_render_visualcam", "1", "Render a visual representation of the camera", true, true, 0, true, 1);
+	cvarManager->registerCvar("dolly_render_frame", "1", "Render frame numbers on the path", true, true, 0, true, 1)
+		.addOnValueChanged(bind(&DollyCamPlugin::OnRenderFramesChanged, this, _1, _2));
 
 	cvarManager->registerNotifier("dolly_path_clear", bind(&DollyCamPlugin::OnAllCommand, this, _1), "Clears the current dollycam path", PERMISSION_ALL);
 	cvarManager->registerNotifier("dolly_snapshot_take", bind(&DollyCamPlugin::OnReplayCommand, this, _1), "Saves the current camera view as snapshot", PERMISSION_REPLAY);
@@ -106,9 +106,10 @@ void DollyCamPlugin::onLoad()
 
 	if (gameWrapper->IsInReplay())
 	{
+		// Just to make reloading the plugin during development functional.
 		gameWrapper->RegisterDrawable(bind(&DollyCamPlugin::onRender, this, _1));
 	}
-	LoadSettings();
+
 	dollyCam->LoadFromFile("_temp.json");
 }
 
@@ -309,18 +310,6 @@ void DollyCamPlugin::OnInReplayCommand(vector<string> params)
 			return;
 		}
 		ReplaySoccarWrapper replay = replayDirector.GetReplay();
-		/*if (replay.IsNull())
-		{
-			cvarManager->log("Replay is NULL!");
-			return;
-		}*//*
-		cvarManager->log(string_format("Replay name: %s", replay.GetReplayName().ToString()));
-		cvarManager->log(string_format("File: %s, ID: %s, date: %s",
-			replay.GetFilename().ToString(), replay.GetId().ToString(), replay.GetDate().ToString()));
-		cvarManager->log(string_format("Game: %i vs %i, score: %i - %i ",
-			replay.GetTeamSize(), replay.GetTeamSize(), replay.GetTeam0Score(), replay.GetTeam1Score()));
-		cvarManager->log(string_format("FPS: %i, frames: %i, record by: ",
-			replay.GetRecordFPS(), replay.GetNumFrames(), replay.GetPlayerName().ToString()));*/
 	}
 }
 
@@ -552,6 +541,7 @@ void DollyCamPlugin::onRender(CanvasWrapper canvas)
 	static bool once = true;
 	if (once)
 	{
+		// Check once that the height of the window isn't larger than the canvas.
 		once = false;
 		auto size = canvas.GetSize();
 		if (guiState.sidebarSettings.height > size.Y)

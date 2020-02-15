@@ -2,7 +2,6 @@
 #include "interpstrategy.h"
 #include "tinyspline\tinysplinecpp.h"
 #include "bakkesmod\plugin\bakkesmodplugin.h"
-#include "Math/Quat.h"
 
 class SplineInterpStrategy : public InterpStrategy
 {

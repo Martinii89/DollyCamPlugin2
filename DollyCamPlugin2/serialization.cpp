@@ -71,7 +71,13 @@ void to_json(json& j, const TabsSettings& p)
 
 void to_json(json& j, const GuiState& p)
 {
-	j = json{ {"sidebarSettings", p.sidebarSettings}, {"tabsSettings", p.tabsSettings} };
+	j = json{ {"sidebarSettings", p.sidebarSettings}, {"tabsSettings", p.tabsSettings}, {"dollySettings", p.dollySettings} };
+}
+
+void to_json(json& j, const DollySettings& p)
+{
+	j = json{ {"animationResetActive", p.animationResetActive}, {"renderDollyPath", p.renderDollyPath}, 
+	{"renderFrameTicks", p.renderFrameTicks}, {"visualCameraActive", p.visualCameraActive} };
 }
 
 void from_json(const json& j, SidebarSettings& p)
@@ -99,4 +105,13 @@ void from_json(const json& j, GuiState& p)
 {
 	j.at("sidebarSettings").get_to(p.sidebarSettings);
 	j.at("tabsSettings").get_to(p.tabsSettings);
+	j.at("dollySettings").get_to(p.dollySettings);
+}
+
+void from_json(const json& j, DollySettings& p)
+{
+	j.at("animationResetActive").get_to(p.animationResetActive);
+	j.at("renderDollyPath").get_to(p.renderDollyPath);
+	j.at("renderFrameTicks").get_to(p.renderFrameTicks);
+	j.at("visualCameraActive").get_to(p.visualCameraActive);
 }

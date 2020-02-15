@@ -54,4 +54,17 @@ Version 2.1 (Feb 2020)
 
 	Hitting ESC while settings window is open closes just the settings window, not the sidebar.
 
+	Settings for the dolly
+		* Toggle visiblity og the path and ticks for each frame
+		* Enable disable the visual camera
+		* Enable\disable the "reset animations on first frame" feature
+
+	Hotkey settings
+		* Menu for changing the hotkey for registered binds.
+
+	* Visual indicator for when the camera is locked
+		* "CAMERA LOCKED" in top right corner
+	* Highlights all the selected snapshot with a different color in the canvas
+
+
 

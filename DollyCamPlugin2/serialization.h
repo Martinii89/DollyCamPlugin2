@@ -29,7 +29,9 @@ void from_json(const json& j, CameraSnapshot& p);
 void to_json(json& j, const SidebarSettings& p);
 void to_json(json& j, const TabsSettings& p);
 void to_json(json& j, const GuiState& p);
+void to_json(json& j, const DollySettings& p);
 
 void from_json(const json& j, SidebarSettings& p);
 void from_json(const json& j, TabsSettings& p);
 void from_json(const json& j, GuiState& p);
+void from_json(const json& j, DollySettings& p);

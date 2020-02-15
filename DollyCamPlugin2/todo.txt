@@ -1,8 +1,5 @@
-* Highlight selected\edited snapshot with a different color in the canvas
 * Put the timeline editor at the top\bottom kinda like the sidebar?
 * File listing for path loading
-* Some visual indicator for when the camera is locked? ("CAMERA LOCKED")
 * Path frame translate  (experimental)
-* Hotkey assignement tab (not high priority - might require some sdk additions)
 * 3D gizmo editor (not high priority - cinder?)
 * Graph editor (https://blenderartists.org/uploads/default/original/4X/3/7/a/37a98fe07c55038cd7daea9ba42e89feeafc6378.png) (not high priority)

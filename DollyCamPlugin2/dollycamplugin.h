@@ -40,6 +40,7 @@ struct GuiState {
 	TabsSettings tabsSettings;
 	CameraOverride cameraOverride;
 	SidebarSettings sidebarSettings;
+	DollySettings dollySettings;
 	bool camLock = false;
 	bool showSettings = false;
 };

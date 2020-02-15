@@ -78,7 +78,7 @@ float DollyCam::GetAccuarateFrame()
 	return floatFrame;
 }
 
-DollyCam::DollyCam(std::shared_ptr<GameWrapper> _gameWrapper, std::shared_ptr<CVarManagerWrapper> _cvarManager, std::shared_ptr<IGameApplier> _gameApplier)
+DollyCam::DollyCam(std::shared_ptr<GameWrapper> _gameWrapper, std::shared_ptr<CVarManagerWrapper> _cvarManager, std::shared_ptr<IGameApplier> _gameApplier, DollySettings& _settings) : settings(_settings)
 {
 	currentPath = std::unique_ptr<savetype>(new savetype());
 	gameWrapper = _gameWrapper;
@@ -145,20 +145,20 @@ void DollyCam::Deactivate()
 	cvarManager->log("Dollycam deactivated");
 }
 
-float lastWrite = -5000.f;
-float diff = .0f;
-bool isFirst = true;
+//float lastWrite = -5000.f;
+//float diff = .0f;
+//bool isFirst = true;
 void DollyCam::Apply()
 {
 	int currentFrame = 0;
-	ServerWrapper sw(NULL);
+	//ServerWrapper sw(NULL);
 	if (gameWrapper->IsInReplay()) {
 		currentFrame = gameWrapper->GetGameEventAsReplay().GetCurrentReplayFrame();
-		sw = gameWrapper->GetGameEventAsReplay();
+		//sw = gameWrapper->GetGameEventAsReplay();
 	}
 	else if (gameWrapper->IsInGame()) {
-		sw = gameWrapper->GetGameEventAsServer();
-		currentFrame = sw.GetReplayDirector().GetReplay().GetCurrentFrame();
+		currentFrame = gameWrapper->GetGameEventAsServer().GetReplayDirector().GetReplay().GetCurrentFrame();
+		//sw = gameWrapper->GetGameEventAsServer();
 	}
 	else
 	{
@@ -168,21 +168,15 @@ void DollyCam::Apply()
 		return;
 	if (currentFrame == currentPath->begin()->first)
 	{
-		if (isFirst) {
-			diff = sw.GetSecondsElapsed();
-			//TODO make this optional. it migh give some scary messages if you try to join a ranked game afterwards.
-			ResetAnimations();
 
-			isFirst = false;
+		if (settings.animationResetActive)
+		{
+			ResetAnimations();
 		}
-	}
-	else {
-		isFirst = true;
 	}
 
 
 	auto floatFrame = GetAccuarateFrame();
-	//auto oldTiming = sw.GetSecondsElapsed() - diff + currentPath->begin()->second.timeStamp;
 	NewPOV pov = locationInterpStrategy->GetPOV(/*oldTiming,*/ floatFrame);
 	if (!usesSameInterp)
 	{
@@ -289,12 +283,12 @@ vector<int> DollyCam::GetUsedFrames()
 
 void DollyCam::SetRenderPath(bool render)
 {
-	renderPath = render;
+	settings.renderDollyPath = render;
 }
 
 void DollyCam::SetRenderFrames(bool _renderFrames)
 {
-	this->renderFrames = _renderFrames;
+	settings.renderFrameTicks = _renderFrames;
 }
 inline float Dot(Rotator rot, Vector line)
 {
@@ -303,7 +297,8 @@ inline float Dot(Rotator rot, Vector line)
 }
 void DollyCam::Render(CanvasWrapper cw)
 {
-	if (!renderPath || !currentRenderPath || currentRenderPath->size() < 2)
+	//if (!renderPath || !currentRenderPath || currentRenderPath->size() < 2)
+	if (!settings.renderDollyPath || !currentRenderPath || currentRenderPath->size() < 2)
 		return;
 
 	ReplayServerWrapper sw = gameWrapper->GetGameEventAsReplay();
@@ -319,7 +314,7 @@ void DollyCam::Render(CanvasWrapper cw)
 	for (auto it = (++currentRenderPath->begin()); it != currentRenderPath->end(); ++it)
 	{
 		Vector2 line = cw.Project(it->second.location);
-		if (!IsActive() && it->first == currentFrame && cvarManager->getCvar("dolly_render_visualcam").getBoolValue())
+		if (!IsActive() && it->first == currentFrame && settings.visualCameraActive)
 		{
 			visualCamera.DrawCamera(cw, it->second.location, it->second.rotation.ToRotator(), 2.0f);
 		}
@@ -348,7 +343,7 @@ void DollyCam::Render(CanvasWrapper cw)
 				cw.DrawLine(prevLine, line);
 				cw.DrawLine(prevLine.minus({ 1,1 }), line.minus({ 1,1 })); //make lines thicker
 				cw.DrawLine(prevLine.minus({ -1,-1 }), line.minus({ -1,-1 }));
-				if (renderFrames) {
+				if (settings.renderFrameTicks) {
 					cw.SetColor(255, 255, 255, 255);
 					cw.SetPosition(line);
 					cw.DrawBox(Vector2{ 2, 2 });
@@ -370,6 +365,10 @@ void DollyCam::Render(CanvasWrapper cw)
 		if (cam_dot_line > 0) inFrustum = true;
 		if (inFrustum) {
 			cw.SetColor(255, 0, 0, 255);
+			if (std::count(settings.openFrames.begin(), settings.openFrames.end(), it->second.frame))
+			{
+				cw.SetColor(252, 255, 0, 255);
+			}
 			if (boxLoc.X >= 0 && boxLoc.X <= canvasSize.X && boxLoc.Y >= 0 && boxLoc.Y <= canvasSize.Y) {
 				boxLoc.X -= 5;
 				boxLoc.Y -= 5;
@@ -382,6 +381,17 @@ void DollyCam::Render(CanvasWrapper cw)
 			}
 		}
 		index++;
+	}
+	static int lAltIndex = gameWrapper->GetFNameIndexByString("LeftAlt");
+	bool altPressed = gameWrapper->IsKeyPressed(lAltIndex);
+	bool _lockCamera = altPressed ? !lockCamera : lockCamera;
+	if (_lockCamera)
+	{
+		auto size = cw.GetSize();
+		Vector2 topRight = { size.X - 220, 0 };
+		cw.SetPosition(topRight);
+		cw.SetColor(255, 0, 0, 255);
+		cw.DrawString("CAMERA LOCKED", 2, 2);
 	}
 	//auto rot = ToFRotator(rotation);
 	//auto q = UE4Math::FQuat(rot);

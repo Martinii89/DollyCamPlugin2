@@ -704,6 +704,14 @@ void DollyCamPlugin::DrawSettingsWindow()
 			DrawInterpolationSettings();
 		}
 
+		if (ImGui::CollapsingHeader("Dolly Settings")) {
+			auto& dollySettings = guiState.dollySettings;
+
+			ImGui::Checkbox("Render the dolly path", &dollySettings.renderDollyPath);
+			ImGui::Checkbox("Render frame ticks on the path", &dollySettings.renderFrameTicks);
+			ImGui::Checkbox("Render the visual camera on the path", &dollySettings.visualCameraActive);
+			ImGui::Checkbox("Reset animation on the first frame of the path", &dollySettings.animationResetActive);
+		}
 		// Path clear\save\load
 		if (ImGui::CollapsingHeader("Path Managment")) {
 			DrawSaveLoadSettings();
@@ -874,6 +882,7 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 	static float subScale = 0.8;
 	static int newFrame = -1;
 	int i = 1;
+	guiState.dollySettings.openFrames.clear();
 	for (const auto& data : *dollyCam->GetCurrentPath())
 	{
 		BeginAltBg(i);
@@ -885,6 +894,10 @@ void DollyCamPlugin::DrawSnapshotsNodes()
 			newFrame = -1;
 		}
 		bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowItemOverlap);
+		if (open)
+		{
+			guiState.dollySettings.openFrames.push_back(snap.frame);
+		}
 
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.0f, 0.0, 0.0));
