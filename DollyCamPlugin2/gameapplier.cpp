@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "gameapplier.h"
 #include "bakkesmod\wrappers\GameObject\CameraWrapper.h"
 #include <iostream>

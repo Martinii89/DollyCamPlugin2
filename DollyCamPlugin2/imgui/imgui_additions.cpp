@@ -1,9 +1,7 @@
+#include "pch.h"
 #include "imgui_additions.h"
 
 namespace ImGui {
-
-
-
 	bool Combo(const char* label, int* currIndex, std::vector<std::string>& values)
 	{
 		if (values.empty()) { return false; }

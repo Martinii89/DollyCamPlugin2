@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "models.h"
 
 POV NewPOV::ToPOV()

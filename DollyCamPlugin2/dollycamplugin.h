@@ -97,6 +97,7 @@ public:
 	//Interp config methods
 	void OnBezierCommand(vector<string> params);
 	virtual void Render();
+	bool CanUseFaFont();
 	void DrawSettingsWindow();
 	bool SidebarTransition(float actualWidth);
 	void DrawSnapshotsNodes();

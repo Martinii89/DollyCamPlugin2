@@ -1,8 +1,8 @@
+#include "pch.h"
 #include "dollycamplugin.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_timeline.h"
-#include "imgui/imgui_tabs.h"
 #include "serialization.h"
 #include "bakkesmod\..\\utils\parser.h"
 #include <functional>
@@ -67,7 +67,8 @@ void DragInPlace()
 	if (ImGui::IsItemActive())
 	{
 		ImGuiContext& g = *GImGui;
-		g.DragLastMouseDelta.x = -ImGui::GetMouseDragDelta(0, 1).x;
+		//g.DragLastMouseDelta.x = -ImGui::GetMouseDragDelta(0, 1).x;
+		g.DragCurrentAccum = -ImGui::GetMouseDragDelta(0, 1).x;
 		SetCursorPos(point.x, point.y);
 	}
 }
@@ -194,271 +195,6 @@ static void ShowHelpMarker(const char* desc)
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
-}
-
-#ifdef _WIN32
-#define IM_NEWLINE "\r\n"
-#else
-#define IM_NEWLINE "\n"
-#endif
-
-void ImGui::ShowFontSelector(const char* label)
-{
-	ImGuiIO& io = ImGui::GetIO();
-	ImFont* font_current = ImGui::GetFont();
-	if (ImGui::BeginCombo(label, font_current->GetDebugName()))
-	{
-		for (int n = 0; n < io.Fonts->Fonts.Size; n++)
-			if (ImGui::Selectable(io.Fonts->Fonts[n]->GetDebugName(), io.Fonts->Fonts[n] == font_current))
-				io.FontDefault = io.Fonts->Fonts[n];
-		ImGui::EndCombo();
-	}
-	ImGui::SameLine();
-	ShowHelpMarker(
-		"- Load additional fonts with io.Fonts->AddFontFromFileTTF().\n"
-		"- The font atlas is built when calling io.Fonts->GetTexDataAsXXXX() or io.Fonts->Build().\n"
-		"- Read FAQ and documentation in extra_fonts/ for more details.\n"
-		"- If you need to add/remove fonts at runtime (e.g. for DPI change), do it before calling NewFrame().");
-}
-
-bool ImGui::ShowStyleSelector(const char* label)
-{
-	static int style_idx = 0;
-	if (ImGui::Combo(label, &style_idx, "Classic\0Dark\0Light\0"))
-	{
-		switch (style_idx)
-		{
-		case 0: ImGui::StyleColorsClassic(); break;
-		case 1: ImGui::StyleColorsDark(); break;
-		case 2: ImGui::StyleColorsLight(); break;
-		}
-		return true;
-	}
-	return false;
-}
-
-void ImGui::ShowStyleEditor(ImGuiStyle* ref)
-{
-	// You can pass in a reference ImGuiStyle structure to compare to, revert to and save to (else it compares to an internally stored reference)
-	ImGuiStyle& style = ImGui::GetStyle();
-	static ImGuiStyle ref_saved_style;
-
-	// Default to using internal storage as reference
-	static bool init = true;
-	if (init && ref == NULL)
-		ref_saved_style = style;
-	init = false;
-	if (ref == NULL)
-		ref = &ref_saved_style;
-
-	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.50f);
-
-	if (ImGui::ShowStyleSelector("Colors##Selector"))
-		ref_saved_style = style;
-	ImGui::ShowFontSelector("Fonts##Selector");
-
-	// Simplified Settings
-	if (ImGui::SliderFloat("FrameRounding", &style.FrameRounding, 0.0f, 12.0f, "%.0f"))
-		style.GrabRounding = style.FrameRounding; // Make GrabRounding always the same value as FrameRounding
-	{ bool window_border = (style.WindowBorderSize > 0.0f); if (ImGui::Checkbox("WindowBorder", &window_border)) style.WindowBorderSize = window_border ? 1.0f : 0.0f; }
-	ImGui::SameLine();
-	{ bool frame_border = (style.FrameBorderSize > 0.0f); if (ImGui::Checkbox("FrameBorder", &frame_border)) style.FrameBorderSize = frame_border ? 1.0f : 0.0f; }
-	ImGui::SameLine();
-	{ bool popup_border = (style.PopupBorderSize > 0.0f); if (ImGui::Checkbox("PopupBorder", &popup_border)) style.PopupBorderSize = popup_border ? 1.0f : 0.0f; }
-
-	// Save/Revert button
-	if (ImGui::Button("Save Ref"))
-		*ref = ref_saved_style = style;
-	ImGui::SameLine();
-	if (ImGui::Button("Revert Ref"))
-		style = *ref;
-	ImGui::SameLine();
-	ShowHelpMarker("Save/Revert in local non-persistent storage. Default Colors definition are not affected. Use \"Export Colors\" below to save them somewhere.");
-
-	if (ImGui::TreeNode("Rendering"))
-	{
-		ImGui::Checkbox("Anti-aliased lines", &style.AntiAliasedLines); ImGui::SameLine(); ShowHelpMarker("When disabling anti-aliasing lines, you'll probably want to disable borders in your style as well.");
-		ImGui::Checkbox("Anti-aliased fill", &style.AntiAliasedFill);
-		ImGui::PushItemWidth(100);
-		ImGui::DragFloat("Curve Tessellation Tolerance", &style.CurveTessellationTol, 0.02f, 0.10f, FLT_MAX, NULL, 2.0f);
-		if (style.CurveTessellationTol < 0.0f) style.CurveTessellationTol = 0.10f;
-		ImGui::DragFloat("Global Alpha", &style.Alpha, 0.005f, 0.20f, 1.0f, "%.2f"); // Not exposing zero here so user doesn't "lose" the UI (zero alpha clips all widgets). But application code could have a toggle to switch between zero and non-zero.
-		ImGui::PopItemWidth();
-		ImGui::TreePop();
-	}
-
-	if (ImGui::TreeNode("Settings"))
-	{
-		ImGui::SliderFloat2("WindowPadding", (float*)&style.WindowPadding, 0.0f, 20.0f, "%.0f");
-		ImGui::SliderFloat("PopupRounding", &style.PopupRounding, 0.0f, 16.0f, "%.0f");
-		ImGui::SliderFloat2("FramePadding", (float*)&style.FramePadding, 0.0f, 20.0f, "%.0f");
-		ImGui::SliderFloat2("ItemSpacing", (float*)&style.ItemSpacing, 0.0f, 20.0f, "%.0f");
-		ImGui::SliderFloat2("ItemInnerSpacing", (float*)&style.ItemInnerSpacing, 0.0f, 20.0f, "%.0f");
-		ImGui::SliderFloat2("TouchExtraPadding", (float*)&style.TouchExtraPadding, 0.0f, 10.0f, "%.0f");
-		ImGui::SliderFloat("IndentSpacing", &style.IndentSpacing, 0.0f, 30.0f, "%.0f");
-		ImGui::SliderFloat("ScrollbarSize", &style.ScrollbarSize, 1.0f, 20.0f, "%.0f");
-		ImGui::SliderFloat("GrabMinSize", &style.GrabMinSize, 1.0f, 20.0f, "%.0f");
-		ImGui::Text("BorderSize");
-		ImGui::SliderFloat("WindowBorderSize", &style.WindowBorderSize, 0.0f, 1.0f, "%.0f");
-		ImGui::SliderFloat("ChildBorderSize", &style.ChildBorderSize, 0.0f, 1.0f, "%.0f");
-		ImGui::SliderFloat("PopupBorderSize", &style.PopupBorderSize, 0.0f, 1.0f, "%.0f");
-		ImGui::SliderFloat("FrameBorderSize", &style.FrameBorderSize, 0.0f, 1.0f, "%.0f");
-		ImGui::Text("Rounding");
-		ImGui::SliderFloat("WindowRounding", &style.WindowRounding, 0.0f, 14.0f, "%.0f");
-		ImGui::SliderFloat("ChildRounding", &style.ChildRounding, 0.0f, 16.0f, "%.0f");
-		ImGui::SliderFloat("FrameRounding", &style.FrameRounding, 0.0f, 12.0f, "%.0f");
-		ImGui::SliderFloat("ScrollbarRounding", &style.ScrollbarRounding, 0.0f, 12.0f, "%.0f");
-		ImGui::SliderFloat("GrabRounding", &style.GrabRounding, 0.0f, 12.0f, "%.0f");
-		ImGui::Text("Alignment");
-		ImGui::SliderFloat2("WindowTitleAlign", (float*)&style.WindowTitleAlign, 0.0f, 1.0f, "%.2f");
-		ImGui::SliderFloat2("ButtonTextAlign", (float*)&style.ButtonTextAlign, 0.0f, 1.0f, "%.2f"); ImGui::SameLine(); ShowHelpMarker("Alignment applies when a button is larger than its text content.");
-		ImGui::TreePop();
-	}
-
-	if (ImGui::TreeNode("Colors"))
-	{
-		static int output_dest = 0;
-		static bool output_only_modified = true;
-		if (ImGui::Button("Export Unsaved"))
-		{
-			if (output_dest == 0)
-				ImGui::LogToClipboard();
-			else
-				ImGui::LogToTTY();
-			ImGui::LogText("ImVec4* colors = ImGui::GetStyle().Colors;" IM_NEWLINE);
-			for (int i = 0; i < ImGuiCol_COUNT; i++)
-			{
-				const ImVec4& col = style.Colors[i];
-				const char* name = ImGui::GetStyleColorName(i);
-				if (!output_only_modified || memcmp(&col, &ref->Colors[i], sizeof(ImVec4)) != 0)
-					ImGui::LogText("colors[ImGuiCol_%s]%*s= ImVec4(%.2ff, %.2ff, %.2ff, %.2ff);" IM_NEWLINE, name, 23 - (int)strlen(name), "", col.x, col.y, col.z, col.w);
-			}
-			ImGui::LogFinish();
-		}
-		ImGui::SameLine(); ImGui::PushItemWidth(120); ImGui::Combo("##output_type", &output_dest, "To Clipboard\0To TTY\0"); ImGui::PopItemWidth();
-		ImGui::SameLine(); ImGui::Checkbox("Only Modified Colors", &output_only_modified);
-
-		ImGui::Text("Tip: Left-click on colored square to open color picker,\nRight-click to open edit options menu.");
-
-		static ImGuiTextFilter filter;
-		filter.Draw("Filter colors", 200);
-
-		static ImGuiColorEditFlags alpha_flags = 0;
-		ImGui::RadioButton("Opaque", &alpha_flags, 0); ImGui::SameLine();
-		ImGui::RadioButton("Alpha", &alpha_flags, ImGuiColorEditFlags_AlphaPreview); ImGui::SameLine();
-		ImGui::RadioButton("Both", &alpha_flags, ImGuiColorEditFlags_AlphaPreviewHalf);
-
-		ImGui::BeginChild("#colors", ImVec2(0, 300), true, ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
-		ImGui::PushItemWidth(-160);
-		for (int i = 0; i < ImGuiCol_COUNT; i++)
-		{
-			const char* name = ImGui::GetStyleColorName(i);
-			if (!filter.PassFilter(name))
-				continue;
-			ImGui::PushID(i);
-			ImGui::ColorEdit4("##color", (float*)&style.Colors[i], ImGuiColorEditFlags_AlphaBar | alpha_flags);
-			if (memcmp(&style.Colors[i], &ref->Colors[i], sizeof(ImVec4)) != 0)
-			{
-				// Tips: in a real user application, you may want to merge and use an icon font into the main font, so instead of "Save"/"Revert" you'd use icons.
-				// Read the FAQ and extra_fonts/README.txt about using icon fonts. It's really easy and super convenient!
-				ImGui::SameLine(0.0f, style.ItemInnerSpacing.x); if (ImGui::Button("Save")) ref->Colors[i] = style.Colors[i];
-				ImGui::SameLine(0.0f, style.ItemInnerSpacing.x); if (ImGui::Button("Revert")) style.Colors[i] = ref->Colors[i];
-			}
-			ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
-			ImGui::TextUnformatted(name);
-			ImGui::PopID();
-		}
-		ImGui::PopItemWidth();
-		ImGui::EndChild();
-
-		ImGui::TreePop();
-	}
-
-	bool fonts_opened = ImGui::TreeNode("Fonts", "Fonts (%d)", ImGui::GetIO().Fonts->Fonts.Size);
-	if (fonts_opened)
-	{
-		ImFontAtlas* atlas = ImGui::GetIO().Fonts;
-		if (ImGui::TreeNode("Atlas texture", "Atlas texture (%dx%d pixels)", atlas->TexWidth, atlas->TexHeight))
-		{
-			ImGui::Image(atlas->TexID, ImVec2((float)atlas->TexWidth, (float)atlas->TexHeight), ImVec2(0, 0), ImVec2(1, 1), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
-			ImGui::TreePop();
-		}
-		ImGui::PushItemWidth(100);
-		for (int i = 0; i < atlas->Fonts.Size; i++)
-		{
-			ImFont* font = atlas->Fonts[i];
-			ImGui::PushID(font);
-			bool font_details_opened = ImGui::TreeNode(font, "Font %d: \'%s\', %.2f px, %d glyphs", i, font->ConfigData ? font->ConfigData[0].Name : "", font->FontSize, font->Glyphs.Size);
-			ImGui::SameLine(); if (ImGui::SmallButton("Set as default")) ImGui::GetIO().FontDefault = font;
-			if (font_details_opened)
-			{
-				ImGui::PushFont(font);
-				ImGui::Text("The quick brown fox jumps over the lazy dog");
-				ImGui::PopFont();
-				ImGui::DragFloat("Font scale", &font->Scale, 0.005f, 0.3f, 2.0f, "%.1f");   // Scale only this font
-				ImGui::SameLine(); ShowHelpMarker("Note than the default embedded font is NOT meant to be scaled.\n\nFont are currently rendered into bitmaps at a given size at the time of building the atlas. You may oversample them to get some flexibility with scaling. You can also render at multiple sizes and select which one to use at runtime.\n\n(Glimmer of hope: the atlas system should hopefully be rewritten in the future to make scaling more natural and automatic.)");
-				ImGui::Text("Ascent: %f, Descent: %f, Height: %f", font->Ascent, font->Descent, font->Ascent - font->Descent);
-				ImGui::Text("Fallback character: '%c' (%d)", font->FallbackChar, font->FallbackChar);
-				ImGui::Text("Texture surface: %d pixels (approx) ~ %dx%d", font->MetricsTotalSurface, (int)sqrtf((float)font->MetricsTotalSurface), (int)sqrtf((float)font->MetricsTotalSurface));
-				for (int config_i = 0; config_i < font->ConfigDataCount; config_i++)
-				{
-					ImFontConfig* cfg = &font->ConfigData[config_i];
-					ImGui::BulletText("Input %d: \'%s\', Oversample: (%d,%d), PixelSnapH: %d", config_i, cfg->Name, cfg->OversampleH, cfg->OversampleV, cfg->PixelSnapH);
-				}
-				if (ImGui::TreeNode("Glyphs", "Glyphs (%d)", font->Glyphs.Size))
-				{
-					// Display all glyphs of the fonts in separate pages of 256 characters
-					const ImFontGlyph* glyph_fallback = font->FallbackGlyph; // Forcefully/dodgily make FindGlyph() return NULL on fallback, which isn't the default behavior.
-					font->FallbackGlyph = NULL;
-					for (int base = 0; base < 0x10000; base += 256)
-					{
-						int count = 0;
-						for (int n = 0; n < 256; n++)
-							count += font->FindGlyph((ImWchar)(base + n)) ? 1 : 0;
-						if (count > 0 && ImGui::TreeNode((void*)(intptr_t)base, "U+%04X..U+%04X (%d %s)", base, base + 255, count, count > 1 ? "glyphs" : "glyph"))
-						{
-							float cell_spacing = style.ItemSpacing.y;
-							ImVec2 cell_size(font->FontSize * 1, font->FontSize * 1);
-							ImVec2 base_pos = ImGui::GetCursorScreenPos();
-							ImDrawList* draw_list = ImGui::GetWindowDrawList();
-							for (int n = 0; n < 256; n++)
-							{
-								ImVec2 cell_p1(base_pos.x + (n % 16) * (cell_size.x + cell_spacing), base_pos.y + (n / 16) * (cell_size.y + cell_spacing));
-								ImVec2 cell_p2(cell_p1.x + cell_size.x, cell_p1.y + cell_size.y);
-								const ImFontGlyph* glyph = font->FindGlyph((ImWchar)(base + n));;
-								draw_list->AddRect(cell_p1, cell_p2, glyph ? IM_COL32(255, 255, 255, 100) : IM_COL32(255, 255, 255, 50));
-								font->RenderChar(draw_list, cell_size.x, cell_p1, ImGui::GetColorU32(ImGuiCol_Text), (ImWchar)(base + n)); // We use ImFont::RenderChar as a shortcut because we don't have UTF-8 conversion functions available to generate a string.
-								if (glyph && ImGui::IsMouseHoveringRect(cell_p1, cell_p2))
-								{
-									ImGui::BeginTooltip();
-									ImGui::Text("Codepoint: U+%04X", base + n);
-									ImGui::Separator();
-									ImGui::Text("AdvanceX: %.1f", glyph->AdvanceX);
-									ImGui::Text("Pos: (%.2f,%.2f)->(%.2f,%.2f)", glyph->X0, glyph->Y0, glyph->X1, glyph->Y1);
-									ImGui::Text("UV: (%.3f,%.3f)->(%.3f,%.3f)", glyph->U0, glyph->V0, glyph->U1, glyph->V1);
-									ImGui::EndTooltip();
-								}
-							}
-							ImGui::Dummy(ImVec2((cell_size.x + cell_spacing) * 16, (cell_size.y + cell_spacing) * 16));
-							ImGui::TreePop();
-						}
-					}
-					font->FallbackGlyph = glyph_fallback;
-					ImGui::TreePop();
-				}
-				ImGui::TreePop();
-			}
-			ImGui::PopID();
-		}
-		static float window_scale = 1.0f;
-		ImGui::DragFloat("this window scale", &window_scale, 0.005f, 0.3f, 2.0f, "%.1f");              // scale only this window
-		ImGui::DragFloat("global scale", &ImGui::GetIO().FontGlobalScale, 0.005f, 0.3f, 2.0f, "%.1f"); // scale everything
-		ImGui::PopItemWidth();
-		ImGui::SetWindowFontScale(window_scale);
-		ImGui::TreePop();
-	}
-
-	ImGui::PopItemWidth();
 }
 
 namespace Columns
@@ -623,7 +359,8 @@ void SetStatusTimeout(std::shared_ptr<GameWrapper> gw, std::string status)
 
 void DollyCamPlugin::Render()
 {
-	if (fa != nullptr && fa->IsLoaded())
+
+	if (CanUseFaFont())
 		ImGui::PushFont(fa);
 	// Make style consistent with BM
 	SetStyle();
@@ -635,14 +372,15 @@ void DollyCamPlugin::Render()
 
 	ImGui::SetNextWindowPos({ 0 - (sidebarSetting.posOffset), 0 }, ImGuiCond_Always);
 	ImGui::SetNextWindowSize({ actualWidth, sidebarSetting.height }, ImGuiCond_Always);
-	if (ImGui::Begin("##sidebar", &isWindowOpen, { 0, 0 }, sidebarSetting.alpha, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar)) {
+	ImGui::SetNextWindowBgAlpha(sidebarSetting.alpha);
+	if (ImGui::Begin("##sidebar", &isWindowOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar)) {
 		if (SidebarTransition(actualWidth))
 		{
 			DrawSnapshotsNodes();
 			if (ImGui::Button(ICON_FA_BACKWARD))
 			{
 				gameWrapper->Execute([this](GameWrapper* gw) {
-					auto firstFrame = std::max(0, dollyCam->GetUsedFrames().front() - 30); //add some padding
+					auto firstFrame = max(0, dollyCam->GetUsedFrames().front() - 30); //add some padding
 					auto replayServer = gw->GetGameEventAsReplay();
 					replayServer.SkipToFrame(firstFrame);
 					//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
@@ -674,10 +412,16 @@ void DollyCamPlugin::Render()
 	{
 		cvarManager->executeCommand("togglemenu " + GetMenuName());
 	}
-	dollyCam->lockCamera = ImGui::IsMouseDragging() || guiState.camLock || view_index > 0;
+	dollyCam->lockCamera = ImGui::IsMouseDragging(0) || guiState.camLock || view_index > 0;
 	block_input = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
-	if (fa != nullptr && fa->IsLoaded())
+	if (CanUseFaFont())
 		ImGui::PopFont();
+}
+
+bool DollyCamPlugin::CanUseFaFont()
+{
+	auto io = ImGui::GetIO();
+	return fa != nullptr && fa->IsLoaded() && io.Fonts->IsBuilt();
 }
 
 void DollyCamPlugin::DrawSettingsWindow()
@@ -685,7 +429,7 @@ void DollyCamPlugin::DrawSettingsWindow()
 	string menuName = "Settings";
 	ImGui::SetNextWindowPos({ 600,0 }, ImGuiCond_Once);
 	ImGui::SetNextWindowSize({ 600,500 }, ImGuiCond_Once);
-	if (!ImGui::Begin(menuName.c_str(), &guiState.showSettings, ImGuiWindowFlags_ResizeFromAnySide))
+	if (!ImGui::Begin(menuName.c_str(), &guiState.showSettings))
 	{
 		// Early out if the window is collapsed, as an optimization.
 		block_input = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
@@ -694,9 +438,9 @@ void DollyCamPlugin::DrawSettingsWindow()
 	}
 
 	auto& tabSettings = guiState.tabsSettings;
-	ImGui::BeginTabBar("#");
-	ImGui::DrawTabsBackground();
-	if (ImGui::AddTab("Settings"))
+	static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_Reorderable;
+	ImGui::BeginTabBar("#", tab_bar_flags);
+	if (ImGui::BeginTabItem("Settings"))
 	{
 		ImGui::BeginChild("#", ImVec2(-5, -50));
 		//interpoltion method selectors
@@ -777,9 +521,10 @@ void DollyCamPlugin::DrawSettingsWindow()
 		}
 
 		ImGui::EndChild();
+		ImGui::EndTabItem();
 	}
 
-	if (tabSettings.oldSnapshots && ImGui::AddTab("Keyframes"))
+	if (tabSettings.oldSnapshots && ImGui::BeginTabItem("Keyframes"))
 	{
 		ImGui::BeginChild("#", ImVec2(-5, -50));
 		DrawSnapshots();
@@ -792,9 +537,10 @@ void DollyCamPlugin::DrawSettingsWindow()
 
 		DrawTimeline();
 		ImGui::EndChild();
+		ImGui::EndTabItem();
 	}
 
-	if (tabSettings.cameraOverride && ImGui::AddTab("Camera override"))
+	if (tabSettings.cameraOverride && ImGui::BeginTabItem("Camera override"))
 	{
 		auto& settings = guiState.cameraOverride;
 		auto& overrideSettings = settings.cameraSettings;
@@ -822,6 +568,7 @@ void DollyCamPlugin::DrawSettingsWindow()
 		}
 
 		ImGui::EndChild();
+		ImGui::EndTabItem();
 	}
 
 	ImGui::EndTabBar();
@@ -847,10 +594,10 @@ bool DollyCamPlugin::SidebarTransition(float actualWidth)
 	auto mPosX = ImGui::GetMousePos().x;
 	float speed = sidebarSetting.transitionSpeed;
 	//Hide sidebar
-	if (mPosX > sidebarSetting.triggerWidth && !ImGui::IsMouseDragging()) {
+	if (mPosX > sidebarSetting.triggerWidth && !ImGui::IsMouseDragging(0)) {
 		if (sidebarSetting.alpha > minAlpha) {
 			sidebarSetting.alpha -= 0.02 * speed;
-			sidebarSetting.alpha = std::max(minAlpha, sidebarSetting.alpha);
+			sidebarSetting.alpha = max(minAlpha, sidebarSetting.alpha);
 		}
 		if (sidebarSetting.posOffset < actualWidth)
 			sidebarSetting.posOffset += 3 * speed;
@@ -859,11 +606,11 @@ bool DollyCamPlugin::SidebarTransition(float actualWidth)
 	if (mPosX < 250) {
 		if (sidebarSetting.alpha < 1) {
 			sidebarSetting.alpha += 0.02 * speed;
-			sidebarSetting.alpha = std::min(1.0f, sidebarSetting.alpha);
+			sidebarSetting.alpha = min(1.0f, sidebarSetting.alpha);
 		}
 		if (sidebarSetting.posOffset > 0) {
 			sidebarSetting.posOffset -= 3 * speed;
-			sidebarSetting.posOffset = std::max(0.0f, sidebarSetting.posOffset);
+			sidebarSetting.posOffset = max(0.0f, sidebarSetting.posOffset);
 		}
 	}
 
@@ -1106,6 +853,8 @@ void DollyCamPlugin::DrawInterpolationSettings()
 	//static int currentInterpolation = dollyCam->GetInterpolationMethod()
 
 	// Draw location interpolation selector
+	ImGui::DragFloat("Anti jitter", &dollyCam->anti_jitter_factor, 0.00005f, 0.9, 1.1);
+
 	ImGui::Text("Select interpolation methods");
 	ImGui::PushItemWidth(100);
 	if (ImGui::BeginCombo("Location method", interpolationMethods.at(interpolation_location).c_str()))
@@ -1156,13 +905,13 @@ void DollyCamPlugin::DrawInterpolationSettings()
 
 void DollyCamPlugin::SetStyle()
 {
-	auto& style = ImGui::GetUserStyle();
+	auto& style = ImGui::GetStyle();
 	if (gameWrapper != nullptr)
 	{
-		auto bm_style_ptr = gameWrapper->GetGUIManager().GetImGuiUserStyle();
+		auto bm_style_ptr = gameWrapper->GetGUIManager().GetImGuiStyle();
 		if (bm_style_ptr != nullptr)
 		{
-			style = *(ImGui::ImGuiUserStyle*)bm_style_ptr;
+			style = *(ImGuiStyle*)bm_style_ptr;
 		}
 		else {
 			cvarManager->log("bm style ptr was null!!");
@@ -1240,73 +989,74 @@ void DollyCamPlugin::DrawSnapshots()
 
 void DollyCamPlugin::DrawTimeline()
 {
-	static bool showFirstSnap = false;
-	static bool showPathDuration = true;
-	auto replayServer = gameWrapper->GetGameEventAsReplay();
-	ImGui::BeginChild("timelinechild", { 0, 30 });
-	static float totalReplayTime = 100.0f;
-	if (!replayServer.IsNull())
-	{
-		auto replay = replayServer.GetReplay();
-		totalReplayTime = replay.GetNumFrames() / replayServer.GetReplayFPS();
-	}
-	else {
-	}
-	ImGui::BeginTimeline("Timeline", totalReplayTime);
+	return;
+	//static bool showFirstSnap = false;
+	//static bool showPathDuration = true;
+	//auto replayServer = gameWrapper->GetGameEventAsReplay();
+	//ImGui::BeginChild("timelinechild", { 0, 30 });
+	//static float totalReplayTime = 100.0f;
+	//if (!replayServer.IsNull())
+	//{
+	//	auto replay = replayServer.GetReplay();
+	//	totalReplayTime = replay.GetNumFrames() / replayServer.GetReplayFPS();
+	//}
+	//else {
+	//}
+	//ImGui::BeginTimeline("Timeline", totalReplayTime);
 
-	static float currentTime = 0;
-	static float seekTime = 0.0f;
-	auto frames = dollyCam->GetUsedFrames();
+	//static float currentTime = 0;
+	//static float seekTime = 0.0f;
+	//auto frames = dollyCam->GetUsedFrames();
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 237.0 / 255, 25.0 / 255, 0, 1 });
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 1.0, 72.0 / 255, 50.0 / 255, 1 });
-	ImGui::PushStyleColor(ImGuiCol_ColumnActive, ImVec4{ 1, 87.0 / 255, 67.0 / 255, 1 });
-	if (ImGui::TimelineMarker("currentFrame", currentTime, "Time: "))
-	{
-		seekTime = currentTime;
-	}
-	else {
-		if (!replayServer.IsNull())
-		{
-			auto replay = replayServer.GetReplay();
-			currentTime = replay.GetCurrentFrame() / replayServer.GetReplayFPS();
-		}
-	}
-	ImGui::PopStyleColor(3);
-	if (IsItemJustMadeInactive())
-	{
-		int _seekTime = seekTime; //lambda can't capture static
-		gameWrapper->Execute([_seekTime, this](GameWrapper* gw) {
-			auto replayServer = gameWrapper->GetGameEventAsReplay();
-			int frame = _seekTime * replayServer.GetReplayFPS();
-			replayServer.SkipToFrame(frame);
-			//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
-			});
-		//cvarManager->log("Seek to:" + to_string(seekFrame));
-		//frameSkip = seekFrame;
-	}
+	//ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 237.0 / 255, 25.0 / 255, 0, 1 });
+	//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 1.0, 72.0 / 255, 50.0 / 255, 1 });
+	//ImGui::PushStyleColor(ImGuiCol_ColumnActive, ImVec4{ 1, 87.0 / 255, 67.0 / 255, 1 });
+	//if (ImGui::TimelineMarker("currentFrame", currentTime, "Time: "))
+	//{
+	//	seekTime = currentTime;
+	//}
+	//else {
+	//	if (!replayServer.IsNull())
+	//	{
+	//		auto replay = replayServer.GetReplay();
+	//		currentTime = replay.GetCurrentFrame() / replayServer.GetReplayFPS();
+	//	}
+	//}
+	//ImGui::PopStyleColor(3);
+	//if (IsItemJustMadeInactive())
+	//{
+	//	int _seekTime = seekTime; //lambda can't capture static
+	//	gameWrapper->Execute([_seekTime, this](GameWrapper* gw) {
+	//		auto replayServer = gameWrapper->GetGameEventAsReplay();
+	//		int frame = _seekTime * replayServer.GetReplayFPS();
+	//		replayServer.SkipToFrame(frame);
+	//		//cvarManager->log("got this frame:" + to_string(gw->GetGameEventAsReplay().GetCurrentReplayFrame()));
+	//		});
+	//	//cvarManager->log("Seek to:" + to_string(seekFrame));
+	//	//frameSkip = seekFrame;
+	//}
 
-	if (showFirstSnap)
-	{
-		if (frames.size() > 0)
-		{
-			auto firstFrame = (float)frames.front();
-			ImGui::TimelineMarker("FirstFrame", firstFrame, "First frame");
-		}
-	}
+	//if (showFirstSnap)
+	//{
+	//	if (frames.size() > 0)
+	//	{
+	//		auto firstFrame = (float)frames.front();
+	//		ImGui::TimelineMarker("FirstFrame", firstFrame, "First frame");
+	//	}
+	//}
 
-	if (showPathDuration)
-	{
-		if (frames.size() > 1)
-		{
-			auto firstFrame = (float)frames.front();
-			auto lastFrame = (float)frames.back();
-			float values[2] = { firstFrame, lastFrame };
-			ImGui::TimelineEvent("", values);
-		}
-	}
-	ImGui::EndTimeline();
-	ImGui::EndChild();
+	//if (showPathDuration)
+	//{
+	//	if (frames.size() > 1)
+	//	{
+	//		auto firstFrame = (float)frames.front();
+	//		auto lastFrame = (float)frames.back();
+	//		float values[2] = { firstFrame, lastFrame };
+	//		ImGui::TimelineEvent("", values);
+	//	}
+	//}
+	//ImGui::EndTimeline();
+	//ImGui::EndChild();
 }
 
 void DollyCamPlugin::ReadPlayerCameraSettings()
@@ -1343,14 +1093,17 @@ std::string DollyCamPlugin::GetMenuTitle()
 
 void DollyCamPlugin::SetImGuiContext(uintptr_t ctx)
 {
-	ImGui::SetCurrentContext(reinterpret_cast<ImGuiContext*>(ctx));
-	auto io = ImGui::GetIO();
-	//io.Fonts->AddFontDefault();
-	auto default = io.Fonts->AddFontFromFileTTF("bakkesmod/font.ttf", 13.0f);
-	ImFontConfig config;
-	config.MergeMode = true;
-	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	fa = io.Fonts->AddFontFromFileTTF("bakkesmod/data/fonts/fa-solid-900.ttf", 13.0f, &config, icon_ranges);
+	cvarManager->log("Getting the imgui context!");
+	gameWrapper->Execute([this, ctx](GameWrapper* gw) {
+		ImGui::SetCurrentContext(reinterpret_cast<ImGuiContext*>(ctx));
+		auto io = ImGui::GetIO();
+		//io.Fonts->AddFontDefault();
+		auto default = io.Fonts->AddFontFromFileTTF("bakkesmod/font.ttf", 13.0f);
+		ImFontConfig config;
+		config.MergeMode = true;
+		static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		fa = io.Fonts->AddFontFromFileTTF("bakkesmod/data/fonts/fa-solid-900.ttf", 13.0f, &config, icon_ranges);
+		});
 }
 
 bool DollyCamPlugin::ShouldBlockInput()

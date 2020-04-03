@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "dollycamplugin.h"
 #include "gameapplier.h"
 #include "bakkesmod\wrappers\replayserverwrapper.h"
@@ -7,8 +8,6 @@
 #include "utils\parser.h"
 #include "serialization.h"
 
-#include "libs/bakkesutils.h"
-#pragma comment(lib, "BakkesUtils.lib")
 #include "RenderingTools.h"
 
 using namespace std::placeholders;
@@ -45,6 +44,7 @@ void DollyCamPlugin::CameraLock(ServerWrapper camInput, void* params, string fun
 
 void DollyCamPlugin::onLoad()
 {
+
 	LoadSettings();
 	cvarManager->setBind("RightControl+F11", "togglemenu " + GetMenuName());
 

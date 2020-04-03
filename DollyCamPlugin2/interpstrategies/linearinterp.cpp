@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "linearinterp.h"
 
 LinearInterpStrategy::LinearInterpStrategy(std::shared_ptr<savetype> _camPath, int degree)

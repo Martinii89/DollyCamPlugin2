@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "RenderingTools.h"
 #define _USE_MATH_DEFINES
 #include <math.h>

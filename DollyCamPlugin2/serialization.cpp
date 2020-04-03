@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "serialization.h"
 #include "utils\parser.h"
 #include "bakkesmod\wrappers\wrapperstructs.h"
@@ -105,7 +106,10 @@ void from_json(const json& j, GuiState& p)
 {
 	j.at("sidebarSettings").get_to(p.sidebarSettings);
 	j.at("tabsSettings").get_to(p.tabsSettings);
-	j.at("dollySettings").get_to(p.dollySettings);
+	if (j.count("dollySettings") != 0)
+	{
+		j.at("dollySettings").get_to(p.dollySettings);
+	}
 }
 
 void from_json(const json& j, DollySettings& p)

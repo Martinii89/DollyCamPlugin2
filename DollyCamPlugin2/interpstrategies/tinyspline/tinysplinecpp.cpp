@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "tinysplinecpp.h"
 #include <stdlib.h>
 #include <stdexcept>

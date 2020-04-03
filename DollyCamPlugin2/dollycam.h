@@ -32,6 +32,7 @@ private:
 	VisualCamera visualCamera;
 	bool usesSameInterp = false;
 	bool isActive = false;
+
 	void UpdateRenderPath();
 	void CheckIfSameInterp();
 	void ResetAnimations();
@@ -42,6 +43,7 @@ public:
 	~DollyCam();
 
 	bool lockCamera = false;
+	float anti_jitter_factor = 0.96f;
 	std::shared_ptr<GameWrapper> gameWrapper;
 	std::shared_ptr<CVarManagerWrapper> cvarManager;
 

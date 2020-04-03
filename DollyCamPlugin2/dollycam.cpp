@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "dollycam.h"
 #include "bakkesmod\wrappers\gamewrapper.h"
 #include "bakkesmod\wrappers\replayserverwrapper.h"
@@ -69,12 +70,30 @@ float DollyCam::GetAccuarateFrame()
 	if (!gameWrapper->IsInReplay())
 		return -1.0f;
 	auto replay = gameWrapper->GetGameEventAsReplay().GetReplay();
+
 	auto recordedFPS = replay.GetRecordFPS();
+	// magic stutter free number..
+	//if (recordedFPS < 120)
+	//{
+	//	auto magic = (0.96 - 30 * 0.04/90) + (0.04 / 90) * recordedFPS;
+	//	recordedFPS *= magic;
+	//}
+
+	recordedFPS *= anti_jitter_factor;
+
 	auto recordedFrameTime = 1.0f / recordedFPS;
 	auto dt = replay.GetAccumulatedDeltaTime();
 	auto delta_frame = dt / recordedFrameTime;
 	//delta_frame = std::min(1.0f, delta_frame);
 	auto floatFrame = replay.GetCurrentFrame() + delta_frame;
+
+
+	//static double lastFloatFrame = 0;
+	//if (lastFloatFrame != floatFrame)
+	//{
+	//	cvarManager->log(std::to_string(replay.GetCurrentFrame()) + "|" + std::to_string(replay.GetRecordFPS())+ "|" + std::to_string(dt));
+	//}
+	//lastFloatFrame = floatFrame;
 	return floatFrame;
 }
 
@@ -175,8 +194,8 @@ void DollyCam::Apply()
 		}
 	}
 
-
 	auto floatFrame = GetAccuarateFrame();
+
 	NewPOV pov = locationInterpStrategy->GetPOV(/*oldTiming,*/ floatFrame);
 	if (!usesSameInterp)
 	{
