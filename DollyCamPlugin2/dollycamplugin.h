@@ -86,6 +86,7 @@ public:
 	void OnSnapshotCommand(vector<string> params);
 	void OnSnapshotModifyCommand(vector<string> params);
 	void OnSetCameraSettings(vector<string> params);
+	void OnGoToFrame(vector<string> params);
 
 	void OnLiveCommand(vector<string> params);
 

@@ -102,6 +102,9 @@ void DollyCamPlugin::onLoad()
 
 	cvarManager->registerNotifier("dolly_camsettings_set", bind(&DollyCamPlugin::OnSetCameraSettings, this, _1), "Change camera settings", PERMISSION_REPLAY);
 
+	cvarManager->registerNotifier("dolly_rewind", bind(&DollyCamPlugin::OnGoToFrame, this, _1), "Change camera settings", PERMISSION_REPLAY);
+	cvarManager->registerNotifier("dolly_seek", bind(&DollyCamPlugin::OnGoToFrame, this, _1), "Change camera settings", PERMISSION_REPLAY);
+
 	dollyCam->SetRenderPath(true);
 
 	if (gameWrapper->IsInReplay())
@@ -495,6 +498,20 @@ void DollyCamPlugin::OnSetCameraSettings(std::vector<std::string> params)
 	}
 
 	cam.SetCameraSettings(prevSettings);
+}
+
+void DollyCamPlugin::OnGoToFrame(vector<string> params)
+{
+	int frame = 0;
+	if (params[0] == "dolly_rewind")
+	{
+		frame = max(0, dollyCam->GetUsedFrames().front() - 30); //add some padding
+	}
+	else {
+		frame = get_safe_int(params[1]);
+	}
+	auto replayServer = gameWrapper->GetGameEventAsReplay();
+	replayServer.SkipToFrame(frame);
 }
 
 void DollyCamPlugin::OnLiveCommand(vector<string> params)
